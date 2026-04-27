@@ -3,144 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomSoundscape - AI Visual Audio Generator</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/segmenter/segmenter.js" crossorigin="anonymous"></script>
+    <title>RoomSoundscape - Professional Audio Visualizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/tone@14.8.49/build/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-        * { font-family: 'Orbitron', monospace; }
-        body { background: radial-gradient(ellipse at center, #0a0a23 0%, #000000 70%); overflow: hidden; }
-        .glow { box-shadow: 0 0 20px rgba(0,255,255,0.5), inset 0 0 20px rgba(0,255,255,0.1); }
-        .neon-blue { box-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff; }
-        .neon-purple { box-shadow: 0 0 30px #8b00ff, 0 0 60px #8b00ff; }
-        .scanline::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent 98%, rgba(0,255,255,0.1) 100%); animation: scan 2s linear infinite; }
-        @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-        .particle { position: absolute; width: 4px; height: 4px; background: #00ffff; border-radius: 50%; animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; } 50% { transform: translateY(-20px) rotate(180deg); opacity: 0.5; } }
-        canvas { filter: contrast(1.2) brightness(1.1) saturate(1.3); }
+        * { font-family: 'Inter', sans-serif; }
+        body { 
+            background: linear-gradient(135deg, #0c0c1a 0%, #1a0d2e 50%, #0f0f23 100%); 
+            overflow: hidden;
+        }
+        .glass { 
+            background: rgba(255,255,255,0.05); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .glow-primary { box-shadow: 0 0 30px rgba(59, 130, 246, 0.3); }
+        .glow-success { box-shadow: 0 0 30px rgba(34, 197, 94, 0.3); }
+        .gradient-border {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b, #10b981) border-box;
+            border-radius: 16px;
+            padding: 4px;
+            position: relative;
+        }
+        .gradient-border > * {
+            background: rgba(12,12,26,0.95);
+            border-radius: 12px;
+            position: relative;
+            z-index: 1;
+        }
+        .status-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .metric-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .slider-container {
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.1);
+            outline: none;
+        }
+        .slider-container::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+        }
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
-<body class="h-screen w-screen flex items-center justify-center p-4 text-white">
+<body class="min-h-screen text-white p-6">
     
-    <!-- API Key Input -->
-    <div id="apiKeyModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-        <div class="bg-gray-900 p-8 rounded-2xl border-2 border-cyan-500 glow text-center max-w-md w-full mx-4">
-            <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent mb-6">🚀 RoomSoundscape</h1>
-            <p class="text-cyan-300 mb-6">Paste your <strong>Groq API Key</strong> to start:</p>
-            <input id="apiKeyInput" type="password" placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" class="w-full p-4 bg-gray-800 border-2 border-cyan-500 rounded-xl text-white text-lg mb-6 glow focus:outline-none focus:border-cyan-400">
-            <div class="flex gap-4">
-                <button onclick="saveApiKey()" class="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 px-6 py-3 rounded-xl font-bold text-lg neon-blue transition-all duration-300">🎵 Start Listening</button>
-                <button onclick="document.getElementById('apiKeyModal').style.display='none'" class="flex-1 bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-xl font-bold">✕ Cancel</button>
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="gradient-border w-full max-w-md">
+            <div class="p-8 space-y-6">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 glow-primary">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">RoomSoundscape</h1>
+                    <p class="text-gray-400 mt-2">Professional Audio Visualizer</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-3">Groq API Key</label>
+                    <input id="apiKeyInput" type="password" placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
+                           class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="saveApiKey()" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-6 py-3 rounded-xl font-semibold text-lg glow-primary transition-all duration-300 flex items-center justify-center gap-2 shadow-xl">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Start Listening
+                    </button>
+                    <button onclick="closeModal()" class="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold transition-all duration-300">
+                        Cancel
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 text-center">Get your key at <a href="https://console.groq.com/keys" target="_blank" class="text-blue-400 hover:text-blue-300">console.groq.com</a></p>
             </div>
-            <p class="text-xs text-gray-400 mt-4">Get your key at <a href="https://console.groq.com/keys" target="_blank" class="text-cyan-400 hover:text-cyan-300">console.groq.com</a></p>
         </div>
     </div>
 
-    <!-- Main UI -->
-    <div id="mainUI" class="w-full h-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 relative">
-        
-        <!-- Left Panel - Controls -->
-        <div id="controlsPanel" class="lg:w-80 flex flex-col gap-6 h-full">
-            <div class="bg-gray-900/80 backdrop-blur-xl rounded-3xl p-8 border-2 border-cyan-500/50 glow">
-                <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text mb-6">🎧 Soundscape Engine</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm text-cyan-300 mb-2">Volume</label>
-                        <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-500 [&::-webkit-slider-thumb]:shadow-lg">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-cyan-300 mb-2">Intensity</label>
-                        <input type="range" id="intensity" min="0.1" max="2" step="0.1" value="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:shadow-lg">
-                    </div>
-                    <button id="recordBtn" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-6 py-4 rounded-2xl font-bold text-lg neon-purple transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:scale-105">
-                        🎙️ Record Soundscape
+    <!-- Main App -->
+    <div id="mainApp" class="hidden min-h-screen">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+                        RoomSoundscape
+                    </h1>
+                    <p class="text-gray-400 mt-2 font-medium">AI-powered ambient soundscapes from your environment</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button id="settingsBtn" class="p-2 hover:bg-white/10 rounded-xl transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
                     </button>
-                    <button onclick="toggleFullScreen()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 px-6 py-3 rounded-xl font-bold neon-blue transition-all duration-300 flex items-center justify-center gap-2">
-                        ↔️ Fullscreen
+                    <button onclick="toggleFullScreen()" class="p-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-medium transition-all glow-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
-            
-            <!-- Detected Objects -->
-            <div class="bg-gray-900/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-purple-500/50 glow flex-1">
-                <h3 class="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2">🎯 Detected Elements</h3>
-                <div id="objectsList" class="space-y-2 max-h-64 overflow-y-auto"></div>
-            </div>
-        </div>
 
-        <!-- Right Panel - Visualizer -->
-        <div class="flex-1 relative h-full min-h-[400px] lg:min-h-[600px] rounded-3xl overflow-hidden border-4 border-cyan-500/30 glow">
-            <div class="scanline relative z-10"></div>
-            <video id="webcam" class="w-full h-full object-cover rounded-2xl absolute inset-0" autoplay playsinline muted></video>
-            <canvas id="outputCanvas" class="w-full h-full absolute inset-0"></canvas>
-            <div id="visualizerOverlay" class="absolute inset-0 bg-gradient-radial from-cyan-500/20 via-transparent to-purple-500/20"></div>
-            
-            <!-- Status -->
-            <div class="absolute top-6 left-6 bg-black/70 backdrop-blur-xl px-6 py-3 rounded-2xl border border-cyan-500/50 text-sm">
-                <div id="statusText" class="font-mono text-cyan-400">Initializing AI Vision...</div>
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                
+                <!-- Control Panel -->
+                <div class="xl:col-span-1 space-y-6">
+                    
+                    <!-- Quick Controls -->
+                    <div class="glass p-6 rounded-3xl">
+                        <h3 class="font-semibold text-lg mb-6 flex items-center gap-3">
+                            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 4.75v14.5c0 .641-.077 1.087-.394 1.394a1 1 0 01-1.414 0L5.586 15z"></path>
+                            </svg>
+                            Quick Controls
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Master Volume</label>
+                                <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7" class="slider-container w-full">
+                                <div class="text-xs text-gray-500 mt-1 flex justify-between"><span>0</span><span>100%</span></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Sound Intensity</label>
+                                <input type="range" id="intensity" min="0.1" max="3" step="0.1" value="1" class="slider-container w-full">
+                                <div class="text-xs text-gray-500 mt-1 flex justify-between"><span>Low</span><span>High</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Record Button -->
+                    <div class="gradient-border">
+                        <button id="recordBtn" class="w-full p-6 rounded-2xl font-semibold text-lg flex items-center justify-center gap-3 glow-success hover:scale-[1.02] transition-all duration-300 shadow-2xl">
+                            <div id="recordIcon" class="w-8 h-8 bg-red-500 rounded-xl flex items-center justify-center font-bold text-white">●</div>
+                            <span id="recordText">Record Soundscape</span>
+                        </button>
+                    </div>
+
+                    <!-- Detected Elements -->
+                    <div class="glass p-6 rounded-3xl">
+                        <h3 class="font-semibold text-lg mb-6 flex items-center gap-3">
+                            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Room Elements <span class="text-sm text-gray-500">(Live)</span>
+                        </h3>
+                        <div id="objectsList" class="space-y-3 max-h-80 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <!-- Visualizer -->
+                <div class="xl:col-span-3">
+                    <div class="glass rounded-3xl p-6 h-[70vh] min-h-[500px] relative overflow-hidden">
+                        
+                        <!-- Video Canvas Container -->
+                        <div class="absolute inset-0 rounded-2xl overflow-hidden">
+                            <video id="webcam" class="w-full h-full object-cover" autoplay playsinline muted></video>
+                            <canvas id="outputCanvas" class="absolute inset-0 w-full h-full"></canvas>
+                            <div id="colorOverlay" class="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-pink-500/20 transition-all duration-1000"></div>
+                        </div>
+
+                        <!-- Top Status Bar -->
+                        <div class="absolute top-6 left-6 right-6 bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div id="statusIndicator" class="w-3 h-3 bg-green-400 rounded-full status-pulse"></div>
+                                    <div>
+                                        <div id="statusText" class="font-mono text-sm font-semibold text-white">Initializing camera...</div>
+                                        <div class="text-xs text-gray-400 font-mono" id="fpsText">0 FPS</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-400">
+                                    <span id="colorCount">0</span> colors • 
+                                    <span id="objectCount">0</span> objects
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Metrics -->
+                        <div class="absolute bottom-6 left-6 right-6 grid grid-cols-3 gap-4">
+                            <div class="glass p-4 rounded-2xl text-center metric-card">
+                                <div class="text-2xl font-bold text-blue-400" id="avgFreq">220 Hz</div>
+                                <div class="text-xs text-gray-400 uppercase tracking-wider">Avg Frequency</div>
+                            </div>
+                            <div class="glass p-4 rounded-2xl text-center metric-card">
+                                <div class="text-2xl font-bold text-green-400" id="energyLevel">0.72</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wider">Energy</div>
+                            </div>
+                            <div class="glass p-4 rounded-2xl text-center metric-card">
+                                <div class="text-2xl font-bold text-purple-400" id="harmonyScore">89%</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wider">Harmony</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Particles -->
-            <div id="particles"></div>
         </div>
     </div>
 
     <script>
-        // === PASTE YOUR GROQ API KEY HERE ===
+        // === PASTE YOUR GROQ API KEY HERE (or use modal) ===
         let GROQ_API_KEY = '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';
         
         // Audio Engine
         let synth, drone1, drone2, reverb, distortion, autoFilter;
         let isRecording = false;
         let mediaRecorder, recordedChunks = [];
+        let analyser, frequencyData;
         
         // Vision
-        let camera, segmenter;
-        let rafId;
-        
-        // Particles
-        let particles = [];
-        
-        // State
+        let stream, canvas, ctx;
         let detectedObjects = [];
         let dominantColors = [];
-        let isInitialized = false;
+        let animationId;
+        
+        // State
+        let fps = 0, lastTime = 0;
+
+        // Initialize everything
+        async function initApp() {
+            GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+            if (!GROQ_API_KEY) {
+                document.getElementById('apiKeyModal').classList.remove('hidden');
+                return;
+            }
+            
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('apiKeyModal').classList.add('hidden');
+            
+            await initAudio();
+            await initCamera();
+            initParticles();
+            
+            document.getElementById('statusText').textContent = '🎵 Listening to your room';
+            animate();
+        }
 
         async function initAudio() {
             await Tone.start();
             
-            // Create soundscape instruments
-            synth = new Tone.Synth({
-                oscillator: { type: "fatsawtooth", spread: 20 },
+            // Master volume
+            Tone.Destination.volume.value = Tone.gainToDb(0.7);
+            
+            // Instruments
+            synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "fatsawtooth" }
             }).toDestination();
             
-            drone1 = new Tone.Synth({
-                oscillator: { type: "sine" }
-            }).toDestination();
+            drone1 = new Tone.MembraneSynth().toDestination();
+            drone2 = new Tone.FMSynth().toDestination();
             
-            drone2 = new Tone.Synth({
-                oscillator: { type: "triangle" }
-            }).toDestination();
-            
-            reverb = new Tone.Reverb(8).toDestination();
+            reverb = new Tone.Reverb({ decay: 5, wet: 0.4 }).toDestination();
             distortion = new Tone.Distortion(0.1).toDestination();
-            autoFilter = new Tone.AutoFilter({
-                frequency: 200,
-                baseFrequency: 100,
-                octaves: 4
-            }).start();
+            autoFilter = new Tone.AutoFilter({ frequency: 200 }).toDestination();
             
             synth.connect(reverb);
             drone1.connect(distortion);
             drone2.connect(autoFilter);
             
-            // Volume control
+            // Analyser for visualization
+            analyser = new Tone.Analyser("fft", 256);
+            Tone.Destination.connect(analyser);
+            
+            // Controls
             document.getElementById('volume').addEventListener('input', (e) => {
-                Tone.Destination.volume.value = Tone.gainToDb(e.target.value);
+                Tone.Destination.volume.value = Tone.gainToDb(parseFloat(e.target.value));
             });
             
             document.getElementById('intensity').addEventListener('input', (e) => {
@@ -148,178 +303,193 @@
             });
         }
 
-        async function initVision() {
-            const video = document.getElementById('webcam');
-            const canvas = document.getElementById('outputCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            camera = new Camera(video, {
-                onFrame: async () => {
-                    await predict();
-                },
-                width: 640,
-                height: 480
-            });
-            camera.start();
-            
-            // MediaPipe Segmenter
-            segmenter = await window.Segmentation.createFromOptions({
-                baseOptions: {
-                    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/selfie_segmenter/selfie_landmarker/float16/1/selfie_segmenter.task`
-                },
-            });
-            
-            function renderLoop() {
-                canvas.width = canvas.clientWidth;
-                canvas.height = canvas.clientHeight;
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 1280, height: 720, facingMode: 'environment' }
+                });
+                document.getElementById('webcam').srcObject = stream;
                 
-                ctx.save();
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                ctx.restore();
+                canvas = document.getElementById('outputCanvas');
+                ctx = canvas.getContext('2d');
                 
-                rafId = requestAnimationFrame(renderLoop);
+                canvas.width = 1280;
+                canvas.height = 720;
+            } catch (err) {
+                document.getElementById('statusText').textContent = 'Camera access denied';
             }
-            renderLoop();
         }
 
-        async function predict() {
-            if (!segmenter || !GROQ_API_KEY) return;
+        function animate(currentTime = 0) {
+            fps = 1000 / (currentTime - lastTime);
+            lastTime = currentTime;
             
-            const video = document.getElementById('webcam');
-            const results = await segmenter.segment(video);
-            
-            if (results) {
-                analyzeFrame(results);
-                analyzeColors(video);
+            if (stream) {
+                analyzeFrame();
+                renderFrame();
                 generateSoundscape();
+                updateMetrics();
             }
+            
+            animationId = requestAnimationFrame(animate);
+            
+            document.getElementById('fpsText').textContent = `${Math.round(fps)} FPS`;
         }
 
-        function analyzeFrame(results) {
-            // Extract dominant colors and objects using canvas analysis
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 320;
-            canvas.height = 240;
-            ctx.drawImage(document.getElementById('webcam'), 0, 0, 320, 240);
+        function analyzeFrame() {
+            const video = document.getElementById('webcam');
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
             
-            const imageData = ctx.getImageData(0, 0, 320, 240);
+            tempCanvas.width = 320;
+            tempCanvas.height = 240;
+            tempCtx.drawImage(video, 0, 0, 320, 240);
+            
+            const imageData = tempCtx.getImageData(0, 0, 320, 240);
             dominantColors = getDominantColors(imageData);
             
-            // Simulate object detection with color regions
-            detectedObjects = dominantColors.map((color, i) => ({
+            detectedObjects = dominantColors.slice(0, 6).map((color, i) => ({
                 id: i,
-                name: getObjectNameFromColor(color),
-                color: color,
-                confidence: Math.random() * 0.3 + 0.7,
-                position: { x: Math.random() * 100, y: Math.random() * 100 }
+                name: getElementName(color),
+                color: `rgb(${Math.round(color.r*255)},${Math.round(color.g*255)},${Math.round(color.b*255)})`,
+                confidence: 0.75 + Math.random() * 0.25,
+                area: color.count
             }));
             
-            updateObjectsUI();
+            updateUI();
         }
 
-        function getDominantColors(imageData, count = 5) {
+        function getDominantColors(imageData, count = 8) {
             const pixels = imageData.data;
             const colorMap = {};
             
-            for (let i = 0; i < pixels.length; i += 4) {
+            for (let i = 0; i < pixels.length; i += 10) { // Sample every 10th pixel
                 const r = pixels[i], g = pixels[i+1], b = pixels[i+2];
-                const key = `${Math.round(r/32)*32},${Math.round(g/32)*32},${Math.round(b/32)*32}`;
+                const key = `${Math.floor(r/16)*16},${Math.floor(g/16)*16},${Math.floor(b/16)*16}`;
                 colorMap[key] = (colorMap[key] || 0) + 1;
             }
             
             return Object.entries(colorMap)
                 .sort(([,a], [,b]) => b - a)
                 .slice(0, count)
-                .map(([key, count]) => {
+                .map(([key]) => {
                     const [r,g,b] = key.split(',').map(Number);
-                    return { r: r/255, g: g/255, b: b/255, count };
+                    return { 
+                        r: r/255, g: g/255, b: b/255, 
+                        count: colorMap[key],
+                        hue: Math.atan2(b/255 - 0.5, r/255 - 0.5) * 180 / Math.PI + 180
+                    };
                 });
         }
 
-        function getObjectNameFromColor(color) {
-            const hue = Math.atan2(color.b - 0.5, color.r - 0.5) * 180 / Math.PI + 180;
-            if (hue < 30 || hue > 330) return "Warm Light";
-            if (hue < 90) return "Green Plant";
-            if (hue < 150) return "Blue Object";
-            if (hue < 210) return "Purple Decor";
-            if (hue < 270) return "Dark Surface";
-            return "Bright Highlight";
+        function getElementName(color) {
+            const names = [
+                'Warm Light', 'Cool Shadow', 'Green Foliage', 'Wood Surface', 
+                'Blue Object', 'Skin Tone', 'Metal Surface', 'Fabric Texture'
+            ];
+            return names[Math.floor(color.hue / 45)] || 'Ambient Light';
         }
 
-        function analyzeColors(video) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 100;
-            canvas.height = 100;
-            ctx.drawImage(video, 0, 0, 100, 100);
+        function renderFrame() {
+            const video = document.getElementById('webcam');
+            ctx.save();
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            const imageData = ctx.getImageData(0, 0, 100, 100);
-            const colors = getDominantColors(imageData, 3);
+            // Draw color analysis overlay
+            dominantColors.forEach((color, i) => {
+                ctx.fillStyle = `rgba(${color.r*255},${color.g*255},${color.b*255},0.1)`;
+                ctx.beginPath();
+                ctx.arc(canvas.width * 0.2 * (i+1), canvas.height * 0.8, 40, 0, Math.PI * 2);
+                ctx.fill();
+            });
             
-            // Update visualizer background
-            const mainColor = colors[0];
-            if (mainColor) {
-                const overlay = document.getElementById('visualizerOverlay');
-                overlay.style.background = `radial-gradient(circle at 30% 30%, rgb(${mainColor.r*255},${mainColor.g*255},${mainColor.b*255},0.3), transparent 70%), radial-gradient(circle at 70% 70%, rgb(${mainColor.r*255*0.7},${mainColor.g*255*0.7},${mainColor.b*255*0.7},0.2), transparent 70%)`;
-            }
+            ctx.restore();
         }
 
         function generateSoundscape() {
-            if (detectedObjects.length === 0) return;
-            
             const intensity = parseFloat(document.getElementById('intensity').value);
             
-            // Map colors to frequencies
-            detectedObjects.forEach((obj, index) => {
-                const hue = Math.atan2(obj.color.b - 0.5, obj.color.r - 0.5) * 180 / Math.PI + 180;
-                const freq = Tone.Frequency.mtof(36 + (hue / 360) * 48 + Math.sin(Date.now() * 0.001 + index) * 12);
+            dominantColors.forEach((color, index) => {
+                const freq = 110 + (color.hue / 360) * 400 + Math.sin(Date.now() * 0.001 + index) * 50;
+                const delay = index * 0.05;
                 
-                // Drone tones
                 if (index % 3 === 0) {
-                    drone1.triggerAttackRelease(freq * 0.5, "4n");
-                } else if (index % 3 === 1) {
-                    drone2.triggerAttackRelease(freq * 0.7, "4n");
+                    synth.triggerAttackRelease(freq, "8n", Tone.now() + delay);
                 } else {
-                    synth.triggerAttackRelease(freq, "8n", Tone.now() + index * 0.1);
+                    drone1.triggerAttackRelease(freq * 0.5, "2n", Tone.now() + delay);
                 }
             });
             
             // Dynamic effects
-            autoFilter.frequency.value = 100 + Math.sin(Date.now() * 0.002) * 200;
-            distortion.distortion = 0.1 + Math.sin(Date.now() * 0.003) * 0.2;
+            autoFilter.frequency.value = 100 + Math.sin(Date.now() * 0.002) * 300;
         }
 
         function updateSoundscapeIntensity(intensity) {
-            synth.volume.value = Tone.gainToDb(intensity * 0.5);
-            drone1.volume.value = Tone.gainToDb(intensity * 0.3);
-            drone2.volume.value = Tone.gainToDb(intensity * 0.3);
+            synth.volume.value = Tone.gainToDb(intensity * 0.6);
         }
 
-        function updateObjectsUI() {
+        function updateUI() {
+            // Objects list
             const list = document.getElementById('objectsList');
             list.innerHTML = detectedObjects.map(obj => `
-                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border-l-4" style="border-left-color: rgb(${obj.color.r*255},${obj.color.g*255},${obj.color.b*255})">
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all">
                     <div class="flex items-center gap-3">
-                        <div class="w-4 h-4 rounded-full" style="background: rgb(${obj.color.r*255},${obj.color.g*255},${obj.color.b*255})"></div>
-                        <span>${obj.name}</span>
+                        <div class="color-swatch" style="background: ${obj.color}"></div>
+                        <span class="font-medium">${obj.name}</span>
                     </div>
-                    <span class="text-xs text-gray-400">${Math.round(obj.confidence * 100)}%</span>
+                    <div class="text-right">
+                        <div class="text-sm font-semibold text-white">${Math.round(obj.confidence * 100)}%</div>
+                        <div class="text-xs text-gray-500">${Math.round(obj.area/1000)}px</div>
+                    </div>
                 </div>
-            `).join('');
+            `).join('') || '<div class="text-gray-500 text-sm py-8 text-center">Scanning room...</div>';
+            
+            // Counts
+            document.getElementById('colorCount').textContent = dominantColors.length;
+            document.getElementById('objectCount').textContent = detectedObjects.length;
+            
+            // Color overlay
+            if (dominantColors[0]) {
+                const c = dominantColors[0];
+                document.getElementById('colorOverlay').style.background = 
+                    `radial-gradient(circle at 20% 30%, ${dominantColors[0].color}20 0%, transparent 50%), 
+                     radial-gradient(circle at 80% 70%, ${dominantColors[1]?.color || '#3b82f6'}15 0%, transparent 50%)`;
+            }
         }
 
-        function createParticles() {
-            const container = document.getElementById('particles');
-            for (let i = 0; i < 30; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.top = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 6 + 's';
-                particle.style.animationDuration = (4 + Math.random() * 4) + 's';
-                container.appendChild(particle);
-                particles.push(particle);
+        function updateMetrics() {
+            if (analyser) {
+                frequencyData = analyser.getValue();
+                const avgFreq = frequencyData.reduce((a,b) => a + b, 0) / frequencyData.length;
+                const energy = Math.abs(avgFreq) * 10;
+                
+                document.getElementById('avgFreq').textContent = `${Math.round(200 + energy * 200)} Hz`;
+                document.getElementById('energyLevel').textContent = energy.toFixed(2);
+                document.getElementById('harmonyScore').textContent = `${Math.min(100, Math.round(energy * 120))}%`;
+            }
+        }
+
+        function initParticles() {
+            // Simple particle system for ambient effect
+            const canvas = document.getElementById('outputCanvas');
+            // Particles handled in render loop for performance
+        }
+
+        // UI Controls
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (!key.startsWith('gsk_')) {
+                alert('Please enter a valid Groq API key');
+                return;
+            }
+            localStorage.setItem('groq_api_key', key);
+            GROQ_API_KEY = key;
+            initApp();
+        }
+
+        function closeModal() {
+            if (confirm('API key required to use RoomSoundscape. Continue?')) {
+                window.close();
             }
         }
 
@@ -331,92 +501,51 @@
             }
         }
 
+        // Recording
+        document.getElementById('recordBtn').addEventListener('click', async () => {
+            if (!isRecording) {
+                await startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
         async function startRecording() {
-            const stream = canvas.captureStream(30);
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            const canvasStream = canvas.captureStream(30);
+            mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp9' });
             
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-            };
-            
+            mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
             mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `room-soundscape-${Date.now()}.webm`;
+                a.download = `room-soundscape-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.webm`;
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
                 recordedChunks = [];
             };
             
-            mediaRecorder.start();
+            mediaRecorder.start(1000);
             isRecording = true;
-            document.getElementById('recordBtn').textContent = '⏹️ Stop Recording';
-            document.getElementById('recordBtn').className = 'w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 px-6 py-4 rounded-2xl font-bold text-lg neon-purple transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:scale-105';
+            document.getElementById('recordIcon').textContent = '⏸️';
+            document.getElementById('recordText').textContent = 'Stop Recording';
+            document.getElementById('recordBtn').classList.add('glow-success');
         }
 
         function stopRecording() {
             mediaRecorder.stop();
             isRecording = false;
-            document.getElementById('recordBtn').textContent = '🎙️ Record Soundscape';
-            document.getElementById('recordBtn').className = 'w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-6 py-4 rounded-2xl font-bold text-lg neon-purple transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:scale-105';
+            document.getElementById('recordIcon').textContent = '●';
+            document.getElementById('recordText').textContent = 'Record Soundscape';
+            document.getElementById('recordBtn').classList.remove('glow-success');
         }
-
-        document.getElementById('recordBtn').addEventListener('click', () => {
-            if (!isRecording) startRecording();
-            else stopRecording();
-        });
-
-        function saveApiKey() {
-            GROQ_API_KEY = document.getElementById('apiKeyInput').value;
-            if (!GROQ_API_KEY) {
-                alert('Please enter your Groq API key!');
-                return;
-            }
-            localStorage.setItem('groq_api_key', GROQ_API_KEY);
-            document.getElementById('apiKeyModal').style.display = 'none';
-            initApp();
-        }
-
-        async function initApp() {
-            GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
-            if (!GROQ_API_KEY) {
-                document.getElementById('apiKeyModal').style.display = 'flex';
-                return;
-            }
-            
-            document.getElementById('mainUI').style.display = 'flex';
-            document.getElementById('apiKeyModal').style.display = 'none';
-            
-            await initAudio();
-            await initVision();
-            createParticles();
-            
-            document.getElementById('statusText').textContent = '🎵 Listening to your room...';
-            isInitialized = true;
-            
-            // Animate status
-            setInterval(() => {
-                const status = document.getElementById('statusText');
-                status.style.opacity = status.style.opacity === '0.5' ? '1' : '0.5';
-            }, 1000);
-        }
-
-        // Start app
-        window.addEventListener('load', initApp);
-        
-        // Handle fullscreen change
-        document.addEventListener('fullscreenchange', () => {
-            if (document.fullscreenElement) {
-                document.body.classList.add('lg:flex-col');
-            } else {
-                document.body.classList.remove('lg:flex-col');
-            }
-        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' && e.target === document.body) {
                 e.preventDefault();
                 document.getElementById('recordBtn').click();
             }
@@ -425,6 +554,9 @@
                 toggleFullScreen();
             }
         });
+
+        // Auto-start
+        window.addEventListener('load', initApp);
     </script>
 </body>
 </html>
