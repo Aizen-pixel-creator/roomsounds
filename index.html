@@ -76,7 +76,7 @@
         .progress-fill {
             background: linear-gradient(90deg, var(--purple), var(--cyan));
             border-radius: 9999px;
-            transition: width 0.4s ease;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .color-swatch {
@@ -93,6 +93,7 @@
             background: rgba(255,255,255,0.03);
             border-radius: 4px;
             overflow: hidden;
+            transition: height 0.2s ease;
         }
         
         @keyframes wave {
@@ -116,7 +117,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen p-8 max-w-6xl mx-auto">
+<body class="min-h-screen p-8 max-w-4xl mx-auto">
     
     <!-- API Key Modal -->
     <div id="apiModal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
@@ -166,7 +167,7 @@
                     <span class="text-xs mono uppercase tracking-wider text-gray-300">Audio</span>
                 </div>
             </div>
-            <div class="text-xs mono text-gray-500">Live • 60 FPS</div>
+            <div class="text-xs mono text-gray-500" id="fpsCounter">Live • 60 FPS</div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -179,7 +180,7 @@
                 </div>
                 <div class="relative w-full h-80 rounded-2xl overflow-hidden bg-gradient-to-b from-black/50 to-black/80">
                     <video id="camera" class="w-full h-full object-cover" autoplay muted playsinline></video>
-                    <div id="cameraOverlay" class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <div id="cameraOverlay" class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-all duration-1000"></div>
                 </div>
             </div>
 
@@ -210,39 +211,39 @@
             <div class="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-cyan-500/5"></div>
             <div class="relative">
                 <div class="flex items-baseline justify-between mb-8">
-                    <h2 class="text-3xl font-black gradient-text">ENERGETIC</h2>
-                    <div class="text-sm mono text-gray-400">AI Analysis</div>
+                    <h2 class="text-3xl font-black gradient-text" id="moodText">CALM</h2>
+                    <div class="text-sm mono text-gray-400">AI Composition</div>
                 </div>
-                <p class="text-lg text-gray-300 mb-8 leading-relaxed max-w-2xl">
-                    Your room creates a dynamic electronic atmosphere with pulsing rhythms and shimmering ambient textures.
+                <p class="text-lg text-gray-300 mb-8 leading-relaxed max-w-2xl" id="moodDesc">
+                    Your room creates a serene ambient landscape with gentle flowing melodies.
                 </p>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
                         <div class="text-xs text-gray-500 uppercase tracking-wider mb-1 mono">Tempo</div>
-                        <div class="text-2xl font-mono font-black gradient-text mb-2">128 BPM</div>
+                        <div class="text-2xl font-mono font-black gradient-text mb-2" id="tempoVal">72 BPM</div>
                         <div class="h-2 wave-bar">
-                            <div class="progress-fill h-full" style="width: 85%"></div>
+                            <div class="progress-fill h-full" id="tempoBar" style="width: 45%"></div>
                         </div>
                     </div>
                     <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1 mono">Pitch</div>
-                        <div class="text-2xl font-mono font-black gradient-text mb-2">C4</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1 mono">Key</div>
+                        <div class="text-2xl font-mono font-black gradient-text mb-2" id="keyVal">C Major</div>
                         <div class="h-2 wave-bar">
-                            <div class="progress-fill h-full" style="width: 72%"></div>
+                            <div class="progress-fill h-full" id="keyBar" style="width: 60%"></div>
                         </div>
                     </div>
                     <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1 mono">Intensity</div>
-                        <div class="text-2xl font-mono font-black gradient-text mb-2">High</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wider mb-1 mono">Density</div>
+                        <div class="text-2xl font-mono font-black gradient-text mb-2" id="densityVal">Medium</div>
                         <div class="h-2 wave-bar">
-                            <div class="progress-fill h-full" style="width: 92%"></div>
+                            <div class="progress-fill h-full" id="densityBar" style="width: 55%"></div>
                         </div>
                     </div>
                     <div>
                         <div class="text-xs text-gray-500 uppercase tracking-wider mb-1 mono">Reverb</div>
-                        <div class="text-2xl font-mono font-black gradient-text mb-2">8.2s</div>
+                        <div class="text-2xl font-mono font-black gradient-text mb-2" id="reverbVal">4.2s</div>
                         <div class="h-2 wave-bar">
-                            <div class="progress-fill h-full" style="width: 65%"></div>
+                            <div class="progress-fill h-full" id="reverbBar" style="width: 70%"></div>
                         </div>
                     </div>
                 </div>
@@ -262,10 +263,10 @@
                 🎵 Start Listening
             </button>
             <button id="analyzeBtn" class="flex-1 p-5 bg-white/10 border border-white/20 hover:bg-white/20 rounded-2xl font-semibold text-lg btn-glow transition-all">
-                🔍 Analyze Now
+                🔍 Deep Analysis
             </button>
-            <button id="stopBtn" class="flex-1 p-5 border-2 border-white/30 hover:border-white/50 hover:bg-white/10 rounded-2xl font-semibold text-lg btn-glow transition-all">
-                ⏹️ Stop
+            <button id="recordBtn" class="flex-1 p-5 border-2 border-white/30 hover:border-white/50 hover:bg-white/10 rounded-2xl font-semibold text-lg btn-glow transition-all">
+                🎙️ Record
             </button>
         </div>
 
@@ -280,55 +281,80 @@
     </div>
 
     <script>
-        // State
+        // Enhanced Sound Engine State
         let apiKey = '';
         let isListening = false;
-        let stream, analyser, synth, particles = [];
-        let detectedColors = [], sceneTags = [];
-        let animationId, lastTime = 0;
+        let stream, analyser, masterVolume = new Tone.Volume(-12).toDestination();
+        let ambientLayer, melodyLayer, padLayer, effects = {};
+        let currentScene = { mood: 'calm', colors: [], brightness: 0.5, saturation: 0.5 };
+        let particles = [];
+        let animationId, lastTime = 0, isRecording = false, mediaRecorder;
         
-        // Audio context
-        let audioContext, microphone;
-        
+        // Musical scales for different moods
+        const SCALES = {
+            calm: ['C4', 'E4', 'G4', 'B4', 'C5', 'E5', 'G5'],
+            nature: ['D4', 'F#4', 'A4', 'D5', 'F#5', 'A5'],
+            energetic: ['C4', 'E4', 'G4', 'Bb4', 'C5', 'E5'],
+            warm: ['G3', 'B3', 'D4', 'F#4', 'G4', 'B4'],
+            cool: ['A3', 'C#4', 'E4', 'G#4', 'A4', 'C#5'],
+            mysterious: ['F3', 'Ab3', 'C4', 'Eb4', 'F4', 'Ab4']
+        };
+
+        // Scene-to-mood mapping
+        const SCENE_MAPPINGS = {
+            nature: { mood: 'nature', tempo: 60, desc: 'Gentle forest streams and birdsong weave through soft pads' },
+            warm: { mood: 'warm', tempo: 72, desc: 'Cozy fireplace ambiance with mellow acoustic resonance' },
+            cool: { mood: 'cool', tempo: 68, desc: 'Crisp winter air with crystalline bell tones' },
+            energetic: { mood: 'energetic', tempo: 92, desc: 'Dynamic urban pulse with rhythmic synth layers' },
+            calm: { mood: 'calm', tempo: 55, desc: 'Serene ambient landscape with flowing melodies' },
+            mysterious: { mood: 'mysterious', tempo: 65, desc: 'Ethereal pads with subtle harmonic tension' }
+        };
+
         // Init
         async function init() {
             document.getElementById('apiModal').classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('app').classList.remove('opacity-0');
             
             await Tone.start();
-            initAudio();
+            await initSoundEngine();
             createParticles();
             animate();
-            log('System initialized');
+            log('🌿 Sound engine initialized - Ready to compose');
         }
 
-        function startApp() {
-            apiKey = document.getElementById('apiKey').value.trim();
-            if (!apiKey || !apiKey.startsWith('gsk_')) {
-                alert('Please enter a valid Groq API key');
-                return;
-            }
-            localStorage.setItem('roomsound_api', apiKey);
-            init();
-        }
-
-        async function initAudio() {
-            // Polyphonic synth for ambient soundscapes
-            synth = new Tone.PolySynth(Tone.Synth, {
-                oscillator: { type: 'fatsawtooth' },
-                envelope: { attack: 0.1, decay: 0.3, sustain: 0.4, release: 1.2 }
-            }).toDestination();
+        async function initSoundEngine() {
+            // Master chain
+            const limiter = new Tone.Limiter(-6).toDestination();
+            masterVolume.connect(limiter);
             
-            // Effects chain
-            const reverb = new Tone.Reverb({ decay: 4, wet: 0.4 }).toDestination();
-            const delay = new Tone.FeedbackDelay({ delayTime: 0.25, feedback: 0.3 }).toDestination();
-            synth.connect(reverb);
-            synth.connect(delay);
+            // Ambient pad layer (always subtle)
+            padLayer = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine', harmonicity: 0.5 },
+                envelope: { attack: 2, decay: 1, sustain: 0.8, release: 4 },
+                volume: -20
+            }).connect(masterVolume);
             
-            analyser = new Tone.Analyser('fft', 64);
-            Tone.Destination.connect(analyser);
+            // Melody layer
+            melodyLayer = new Tone.PolySynth(Tone.FMSynth, {
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.1, decay: 0.3, sustain: 0.4, release: 1.5 },
+                volume: -15
+            }).connect(masterVolume);
             
-            log('Audio engine ready');
+            // Effects
+            effects.reverb = new Tone.Reverb({ decay: 4, wet: 0.4 }).connect(masterVolume);
+            effects.delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.3, wet: 0.2 }).connect(masterVolume);
+            effects.chorus = new Tone.Chorus({ frequency: 0.5, delayTime: 3.5, depth: 0.7 }).connect(masterVolume);
+            
+            padLayer.connect(effects.reverb);
+            melodyLayer.connect(effects.chorus);
+            melodyLayer.connect(effects.delay);
+            
+            analyser = Tone.context.createAnalyser();
+            analyser.fftSize = 256;
+            masterVolume.connect(analyser);
+            
+            log('🎹 Multi-layered synth engine active');
         }
 
         async function startListening() {
@@ -339,17 +365,19 @@
                 });
                 
                 document.getElementById('camera').srcObject = stream;
-                microphone = new Tone.UserMedia();
-                await microphone.open();
-                microphone.connect(analyser);
                 
                 isListening = true;
-                document.getElementById('startBtn').textContent = '🎵 Stop Listening';
-                document.getElementById('startBtn').classList.add('bg-red-500/80', 'hover:bg-red-400/80');
+                document.getElementById('startBtn').textContent = '⏹️ Stop Listening';
+                document.getElementById('startBtn').classList.replace('from-purple-500', 'from-red-500');
+                document.getElementById('startBtn').classList.replace('to-cyan-500', 'to-red-500');
                 
-                log('✅ Camera & microphone active');
+                // Fade in ambient layer
+                Tone.Transport.bpm.value = 60;
+                Tone.Transport.start();
+                
+                log('🎥 Camera active | 🎶 Composing room music...');
             } catch (e) {
-                log('❌ Camera access denied');
+                log('❌ Permission denied');
             }
         }
 
@@ -358,17 +386,22 @@
                 stream.getTracks().forEach(track => track.stop());
                 document.getElementById('camera').srcObject = null;
             }
-            if (microphone) microphone.close();
+            
+            Tone.Transport.stop();
+            padLayer.triggerReleaseAll();
+            melodyLayer.triggerReleaseAll();
             
             isListening = false;
             document.getElementById('startBtn').textContent = '🎵 Start Listening';
-            document.getElementById('startBtn').classList.remove('bg-red-500/80', 'hover:bg-red-400/80');
-            document.getElementById('startBtn').classList.add('bg-gradient-to-r', 'from-purple-500', 'to-cyan-500', 'hover:from-purple-400', 'hover:to-cyan-400');
+            document.getElementById('startBtn').classList.replace('from-red-500', 'from-purple-500');
+            document.getElementById('startBtn').classList.replace('to-red-500', 'to-cyan-500');
             
-            log('⏹️ Listening stopped');
+            log('⏹️ Composition stopped');
         }
 
         function analyzeScene() {
+            if (!isListening) return;
+            
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = 320;
@@ -378,53 +411,105 @@
             ctx.drawImage(video, 0, 0, 320, 240);
             const imageData = ctx.getImageData(0, 0, 320, 240);
             
-            detectedColors = getDominantColors(imageData);
-            sceneTags = detectedColors.slice(0, 5).map(c => ({
-                name: getTagName(c.hue),
-                color: c
-            }));
+            const colors = getDominantColors(imageData);
+            currentScene.colors = colors;
             
-            updateSceneUI();
-            generateSoundscape();
+            // Calculate scene characteristics
+            const avgBrightness = colors.reduce((sum, c) => sum + (0.299*c.r + 0.587*c.g + 0.114*c.b), 0) / colors.length;
+            const avgSaturation = colors.reduce((sum, c) => sum + getSaturation(c), 0) / colors.length;
+            
+            currentScene.brightness = avgBrightness;
+            currentScene.saturation = avgSaturation;
+            
+            // Map to mood
+            currentScene.mood = getMoodFromScene(colors, avgBrightness, avgSaturation);
+            updateUI();
+            composeMelody();
         }
 
         function getDominantColors(imageData) {
             const pixels = imageData.data;
             const colorMap = {};
             
-            for (let i = 0; i < pixels.length; i += 8) {
+            for (let i = 0; i < pixels.length; i += 6) {
                 const r = pixels[i], g = pixels[i+1], b = pixels[i+2];
-                const key = Math.round(r/32)*32 + ',' + Math.round(g/32)*32 + ',' + Math.round(b/32)*32;
+                const key = Math.round(r/24)*24 + ',' + Math.round(g/24)*24 + ',' + Math.round(b/24)*24;
                 colorMap[key] = (colorMap[key] || 0) + 1;
             }
             
             return Object.entries(colorMap)
                 .sort(([,a], [,b]) => b-a)
                 .slice(0, 6)
-                .map(([key, count]) => {
+                .map(([key]) => {
                     const [r,g,b] = key.split(',').map(Number);
                     const hue = Math.atan2((b/255)-0.5, (r/255)-0.5) * 180/Math.PI + 180;
-                    return { r: r/255, g: g/255, b: b/255, count, hue };
+                    return { r: r/255, g: g/255, b: b/255, hue, count: colorMap[key] };
                 });
         }
 
-        function getTagName(hue) {
-            const tags = ['Light', 'Shadow', 'Warmth', 'Coolness', 'Energy', 'Calm', 'Texture', 'Depth'];
-            return tags[Math.floor(hue / 45) % tags.length];
+        function getSaturation({r,g,b}) {
+            const max = Math.max(r,g,b);
+            const min = Math.min(r,g,b);
+            return max === 0 ? 0 : (max - min) / max;
         }
 
-        function generateSoundscape() {
-            if (!isListening || !detectedColors.length) return;
+        function getMoodFromScene(colors, brightness, saturation) {
+            const greenness = colors.reduce((sum, c) => sum + c.g, 0) / colors.length;
             
-            detectedColors.forEach((color, i) => {
-                const freq = 60 + (color.hue / 360) * 300 + Math.sin(Date.now() * 0.001 + i) * 30;
-                synth.triggerAttackRelease(freq, '4n', Tone.now() + i * 0.1);
+            if (greenness > 0.6 && brightness > 0.4) return 'nature';
+            if (brightness > 0.7) return 'warm';
+            if (brightness < 0.3) return 'mysterious';
+            if (saturation > 0.5) return 'energetic';
+            if (brightness < 0.5) return 'cool';
+            
+            return 'calm';
+        }
+
+        function composeMelody() {
+            const scene = SCENE_MAPPINGS[currentScene.mood] || SCENE_MAPPINGS.calm;
+            
+            // Update UI
+            document.getElementById('moodText').textContent = scene.mood.toUpperCase();
+            document.getElementById('moodDesc').textContent = scene.desc;
+            document.getElementById('tempoVal').textContent = `${scene.tempo} BPM`;
+            
+            // Smooth tempo transition
+            Tone.Transport.bpm.rampTo(scene.tempo, 4);
+            
+            // Ambient pad - root chord
+            const scale = SCALES[scene.mood] || SCALES.calm;
+            const rootNote = scale[0];
+            const chord = [rootNote, scale[2], scale[4]];
+            padLayer.triggerAttackRelease(chord, '8m', Tone.now(), 0.4);
+            
+            // Melody line - arpeggiated pattern
+            const melodyPattern = [0, 2, 4, 2, 0, 4, 7, 4];
+            melodyPattern.forEach((offset, i) => {
+                const note = scale[offset % scale.length];
+                const velocity = 0.3 + Math.random() * 0.4;
+                melodyLayer.triggerAttackRelease(note, `${i % 2 ? '8n' : '4n'}`, Tone.now() + i * 0.3, velocity);
             });
+            
+            // Dynamic effects based on scene
+            effects.reverb.decay.value = 2 + currentScene.brightness * 4;
+            effects.chorus.depth.value = 0.3 + currentScene.saturation * 0.4;
+        }
+
+        function getTagName(hue) {
+            const tags = {
+                0: 'Sunlight', 45: 'Warmth', 90: 'Nature', 135: 'Ocean',
+                180: 'Forest', 225: 'Twilight', 270: 'Shadow', 315: 'Dawn'
+            };
+            return Object.entries(tags).find(([h]) => Math.abs(hue - parseInt(h)) < 45)?.[1] || 'Light';
         }
 
         function updateSceneUI() {
             // Scene tags
-            document.getElementById('sceneTags').innerHTML = sceneTags.map(tag => 
+            const tags = currentScene.colors.slice(0, 5).map(c => ({
+                name: getTagName(c.hue),
+                color: c
+            }));
+            document.getElementById('sceneTags').innerHTML = tags.map(tag => 
                 `<span class="px-3 py-1 bg-white/5 border border-white/20 rounded-full text-xs font-medium" 
                       style="color: rgb(${tag.color.r*255},${tag.color.g*255},${tag.color.b*255})">
                     ${tag.name}
@@ -433,94 +518,142 @@
             
             // Color swatches
             const swatches = document.getElementById('colorSwatches');
-            swatches.innerHTML = detectedColors.slice(0,3).map(color => 
-                `<div class="color-swatch" style="background: rgb(${color.r*255},${color.g*255},${color.b*255})"></div>`
+            swatches.innerHTML = currentScene.colors.slice(0,3).map(color => 
+                `<div class="color-swatch" style="background: rgb(${color.r*255},${color.g*255},${color.b*255})" title="${Math.round(color.hue)}°"></div>`
             ).join('');
-        }
-
-        function animate() {
-            const now = performance.now();
-            if (now - lastTime > 16) { // ~60fps
-                if (isListening) {
-                    analyzeScene();
-                    updateVisualizer();
-                    updateWaveform();
-                    updateParams();
-                }
-                lastTime = now;
+            
+            // Camera overlay
+            if (currentScene.colors[0]) {
+                const primary = currentScene.colors[0];
+                document.getElementById('cameraOverlay').style.background = 
+                    `linear-gradient(135deg, rgba(${primary.r*255*0.3},${primary.g*255*0.3},${primary.b*255*0.3},0.6), transparent)`;
             }
-            animationId = requestAnimationFrame(animate);
         }
 
         function updateVisualizer() {
             const canvas = document.getElementById('visualizer');
             const ctx = canvas.getContext('2d');
             const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+            
+            ctx.fillStyle = 'rgba(5,5,8,0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             if (analyser) {
                 const data = analyser.getValue();
-                const barWidth = canvas.width / data.length;
-                
-                ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const barWidth = canvas.width / data.length * 1.5;
                 
                 for (let i = 0; i < data.length; i++) {
-                    const barHeight = Math.abs(data[i]) * canvas.height * 2;
-                    const hue = (i/data.length) * 360;
-                    ctx.fillStyle = `hsla(${hue}, 70%, 50%, 0.8)`;
-                    ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 1, barHeight);
+                    const barHeight = Math.max(5, Math.abs(data[i]) * canvas.height * 1.5);
+                    const hue = (i/data.length * 360 + currentScene.colors[0]?.hue || 200) % 360;
+                    const saturation = 50 + currentScene.saturation * 30;
+                    
+                    ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${40 + currentScene.brightness*30}%, 0.9)`;
+                    ctx.fillRect(
+                        i * barWidth, 
+                        canvas.height - barHeight, 
+                        barWidth - 2, 
+                        barHeight
+                    );
+                    
+                    // Glow trail
+                    ctx.shadowColor = `hsla(${hue}, ${saturation}%, 50%, 0.5)`;
+                    ctx.shadowBlur = 15;
+                    ctx.fillRect(
+                        i * barWidth, 
+                        canvas.height - barHeight * 0.7, 
+                        barWidth * 0.8, 
+                        barHeight * 0.3
+                    );
+                    ctx.shadowBlur = 0;
                 }
             }
         }
 
         function updateWaveform() {
+            if (!analyser) return;
+            const data = analyser.getValue().slice(0, 20);
             const container = document.getElementById('waveform');
-            if (analyser) {
-                const data = analyser.getValue().slice(0, 20);
-                container.innerHTML = data.map((val, i) => {
-                    const height = Math.abs(val) * 48 + 8;
-                    return `<div class="wave-bar transition-all duration-100" style="height: ${height}px; 
-                            background: linear-gradient(to top, hsl(${240 + i*10}, 70%, 50%), transparent);"></div>`;
-                }).join('');
-            }
+            container.innerHTML = data.map((val, i) => {
+                const height = Math.max(8, Math.abs(val) * 60);
+                const hue = 200 + i * 8 + (currentScene.colors[0]?.hue || 0);
+                return `<div class="wave-bar transition-all duration-150" style="height: ${height}px; 
+                        background: linear-gradient(to top, hsl(${hue}, 60%, 45%), hsla(${hue}, 60%, 35%, 0.3));"></div>`;
+            }).join('');
         }
 
-        function updateParams() {
-            const moods = ['CALM', 'ENERGETIC', 'MYSTERIOUS', 'WARM', 'COOL', 'DYNAMIC'];
-            const h1 = document.querySelector('h2.gradient-text');
-            h1.textContent = moods[Math.floor(Math.random() * moods.length)];
+        function animate(currentTime = 0) {
+            const now = performance.now();
+            const fps = Math.round(1000 / (now - lastTime));
+            document.getElementById('fpsCounter').textContent = `Live • ${fps} FPS`;
             
-            // Animate progress bars
-            document.querySelectorAll('.progress-fill').forEach((bar, i) => {
-                const target = 40 + Math.random() * 60;
-                bar.style.width = target + '%';
-            });
+            if (now - lastTime > 100 && isListening) { // Analyze every ~100ms
+                analyzeScene();
+            }
+            
+            updateVisualizer();
+            updateWaveform();
+            lastTime = now;
+            animationId = requestAnimationFrame(animate);
         }
 
         function createParticles() {
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 15; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
                 particle.style.left = Math.random() * 100 + '%';
-                particle.style.width = particle.style.height = (1 + Math.random() * 3) + 'px';
-                particle.style.animationDuration = (15 + Math.random() * 20) + 's';
-                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.width = particle.style.height = (0.5 + Math.random() * 2) + 'px';
+                particle.style.animationDuration = (20 + Math.random() * 15) + 's';
+                particle.style.animationDelay = `-${Math.random() * 20}s`;
                 document.body.appendChild(particle);
             }
         }
 
         function log(message) {
             const logEl = document.getElementById('log');
-            const time = new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            logEl.innerHTML = `<div>[${time}] ${message}</div>` + logEl.innerHTML.slice(0, 1000);
+            const time = new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute:'2-digit'});
+            const entry = document.createElement('div');
+            entry.textContent = `[${time}] ${message}`;
+            logEl.insertBefore(entry, logEl.firstChild);
+            if (logEl.children.length > 10) logEl.removeChild(logEl.lastChild);
         }
+
+        // Recording
+        document.getElementById('recordBtn').onclick = async () => {
+            if (!isRecording) {
+                const canvas = document.getElementById('visualizer');
+                const stream = canvas.captureStream(30);
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+                
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) {
+                        const chunks = [e.data];
+                        const blob = new Blob(chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `roomsound-${Date.now()}.webm`;
+                        a.click();
+                    }
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                document.getElementById('recordBtn').textContent = '⏹️ Stop';
+                log('🎥 Recording started');
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                document.getElementById('recordBtn').textContent = '🎙️ Record';
+                log('💾 Recording saved');
+            }
+        };
 
         // Event listeners
         document.getElementById('startBtn').onclick = () => isListening ? stopListening() : startListening();
         document.getElementById('analyzeBtn').onclick = analyzeScene;
-        document.getElementById('stopBtn').onclick = stopListening;
 
         // Load saved API key
         window.addEventListener('load', () => {
@@ -533,9 +666,13 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' && e.target === document.body) {
                 e.preventDefault();
                 document.getElementById('startBtn').click();
+            }
+            if (e.code === 'KeyR' && e.target === document.body) {
+                e.preventDefault();
+                document.getElementById('recordBtn').click();
             }
         });
     </script>
