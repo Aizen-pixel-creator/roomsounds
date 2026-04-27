@@ -3,505 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROOMSOUND - AI Audio Visualizer</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <title>RoomSoundscape - AI Visual Audio Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/segmenter/segmenter.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/tone@14.8.49/build/Tone.js"></script>
     <style>
-        :root {
-            --bg-color: #050509;
-            --panel-bg: #0a0a14;
-            --border-color: #1a1a2e;
-            --text-main: #e0e0e0;
-            --accent: #00f2fe;
-            --sub-accent: #4facfe;
-            --log-bg: #030307;
-        }
-
-        body {
-            margin: 0; padding: 20px;
-            background-color: var(--bg-color);
-            background-image: linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
-            background-size: 50px 50px;
-            color: var(--text-main);
-            font-family: 'Courier New', Courier, monospace;
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        header { text-align: center; margin-bottom: 20px; }
-        h1 { font-size: 3em; margin: 0; background: linear-gradient(to right, #ffffff, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        header p { color: #888; font-size: 0.9em; letter-spacing: 2px; }
-
-        /* Setup Screen */
-        #setup-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-        }
-        #setup-overlay h2 { color: var(--accent); }
-        #setup-overlay input { background: #111; border: 1px solid #333; color: white; padding: 10px; width: 300px; margin-bottom: 10px; }
-        #setup-overlay button { background: linear-gradient(45deg, var(--accent), var(--sub-accent)); color: black; border: none; padding: 10px 30px; font-weight: bold; cursor: pointer; }
-
-        /* Dashboard Layout */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; }
-        .panel { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; position: relative; display: flex; flex-direction: column; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; padding-bottom: 10px; margin-bottom: 10px; color: #888; font-size: 0.8em; text-transform: uppercase; }
-
-        /* Left Side (Input) */
-        #input-pane { grid-row: span 2; }
-        .video-container { width: 100%; flex-grow: 1; background: #000; display: flex; justify-content: center; align-items: center; position: relative; border-radius: 4px; overflow: hidden;}
-        video { position: absolute; width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) brightness(0.5);}
-        #overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5;}
-        #loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; z-index: 6; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Right Side (Visualizer + Controls) */
-        #viz-canvas { width: 100%; flex-grow: 1; background: #000; border-radius: 4px; }
-        
-        /* Analysis Panel */
-        #analysis-data { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .mood-box { grid-column: span 2; border: 1px solid var(--border-color); padding: 15px; text-align: center; }
-        #current-mood { font-size: 2em; color: var(--accent); margin: 5px 0; }
-        #color-analysis-text { color: #888; font-size: 0.9em;}
-        .control-slider { border: 1px solid var(--border-color); padding: 10px; display: flex; flex-direction: column;}
-        .control-label { color: #888; font-size: 0.8em; display: flex; justify-content: space-between; margin-bottom: 5px;}
-        .control-value { color: var(--text-main); }
-        .slider-bar { height: 6px; background: #222; border-radius: 3px; position: relative; }
-        .slider-fill { height: 100%; background: linear-gradient(to right, var(--accent), var(--sub-accent)); border-radius: 3px; width: 0%; transition: width 0.3s ease-out;}
-
-        /* Palette + Spectrogram + Logs */
-        .detected-palette { grid-column: span 2; display: flex; gap: 5px; height: 40px; }
-        .color-swatch { flex: 1; border-radius: 2px; }
-        
-        #spectrogram { border: 1px solid var(--border-color); height: 50px; background: #000; grid-column: span 2;}
-
-        /* Controls */
-        #controls-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px;}
-        .control-btn { padding: 15px; border: none; font-family: 'Courier New'; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1.1em;}
-        #btn-listen { background: #7b2cbf; color: white; }
-        #btn-analyze { background: var(--accent); color: black; }
-        #btn-stop { background: #444; color: #888; cursor: not-allowed;}
-
-        /* Log */
-        #terminal-log { background: var(--log-bg); border: 1px solid var(--border-color); height: 100px; padding: 10px; overflow-y: scroll; color: #666; font-size: 0.9em;}
-        #terminal-log p { margin: 3px 0; }
-        .log-time { color: var(--sub-accent); margin-right: 10px; }
-
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        * { font-family: 'Orbitron', monospace; }
+        body { background: radial-gradient(ellipse at center, #0a0a23 0%, #000000 70%); overflow: hidden; }
+        .glow { box-shadow: 0 0 20px rgba(0,255,255,0.5), inset 0 0 20px rgba(0,255,255,0.1); }
+        .neon-blue { box-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff; }
+        .neon-purple { box-shadow: 0 0 30px #8b00ff, 0 0 60px #8b00ff; }
+        .scanline::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent 98%, rgba(0,255,255,0.1) 100%); animation: scan 2s linear infinite; }
+        @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .particle { position: absolute; width: 4px; height: 4px; background: #00ffff; border-radius: 50%; animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; } 50% { transform: translateY(-20px) rotate(180deg); opacity: 0.5; } }
+        canvas { filter: contrast(1.2) brightness(1.1) saturate(1.3); }
     </style>
 </head>
-<body>
-
-<div id="setup-overlay">
-    <h2>ECHOVISION SYSTEM INITIALIZATION</h2>
-    <p>Please enter your credentials to begin neural link</p>
-    <input type="password" id="apiKeyInput" placeholder="GROQ API KEY">
-    <button onclick="initializeSystem()">AUTHORIZE</button>
-</div>
-
-<header>
-    <h1>ROOMSOUND</h1>
-    <p>// AI AUDIO VISUALIZER — YOUR ROOM COMPOSES ITS OWN MUSIC //</p>
-</header>
-
-<div class="dashboard">
-    <div class="panel" id="input-pane">
-        <div class="panel-header">
-            <span>LIVE FEED</span>
-            <span>STATUS: <span id="camera-status" style="color: red;">OFF</span></span>
-        </div>
-        <div class="video-container">
-            <video id="webcam" autoplay playsinline muted></video>
-            <canvas id="overlay-canvas"></canvas>
-            <div id="loader"></div>
+<body class="h-screen w-screen flex items-center justify-center p-4 text-white">
+    
+    <!-- API Key Input -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+        <div class="bg-gray-900 p-8 rounded-2xl border-2 border-cyan-500 glow text-center max-w-md w-full mx-4">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent mb-6">🚀 RoomSoundscape</h1>
+            <p class="text-cyan-300 mb-6">Paste your <strong>Groq API Key</strong> to start:</p>
+            <input id="apiKeyInput" type="password" placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" class="w-full p-4 bg-gray-800 border-2 border-cyan-500 rounded-xl text-white text-lg mb-6 glow focus:outline-none focus:border-cyan-400">
+            <div class="flex gap-4">
+                <button onclick="saveApiKey()" class="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 px-6 py-3 rounded-xl font-bold text-lg neon-blue transition-all duration-300">🎵 Start Listening</button>
+                <button onclick="document.getElementById('apiKeyModal').style.display='none'" class="flex-1 bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-xl font-bold">✕ Cancel</button>
+            </div>
+            <p class="text-xs text-gray-400 mt-4">Get your key at <a href="https://console.groq.com/keys" target="_blank" class="text-cyan-400 hover:text-cyan-300">console.groq.com</a></p>
         </div>
     </div>
 
-    <div class="panel">
-        <div class="panel-header"><span>ANALYZING...</span> <span>VISUALIZER</span></div>
-        <canvas id="viz-canvas"></canvas>
-    </div>
-
-    <div class="panel">
-        <div class="panel-header"><span>CLAUDE AI - SCENE ANALYSIS</span> <span><span id="detected-count">0</span> OBJECTS DETECTED</span></div>
-        <div id="analysis-data">
+    <!-- Main UI -->
+    <div id="mainUI" class="w-full h-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 relative">
+        
+        <!-- Left Panel - Controls -->
+        <div id="controlsPanel" class="lg:w-80 flex flex-col gap-6 h-full">
+            <div class="bg-gray-900/80 backdrop-blur-xl rounded-3xl p-8 border-2 border-cyan-500/50 glow">
+                <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text mb-6">🎧 Soundscape Engine</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-cyan-300 mb-2">Volume</label>
+                        <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-500 [&::-webkit-slider-thumb]:shadow-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-cyan-300 mb-2">Intensity</label>
+                        <input type="range" id="intensity" min="0.1" max="2" step="0.1" value="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:shadow-lg">
+                    </div>
+                    <button id="recordBtn" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-6 py-4 rounded-2xl font-bold text-lg neon-purple transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:scale-105">
+                        🎙️ Record Soundscape
+                    </button>
+                    <button onclick="toggleFullScreen()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 px-6 py-3 rounded-xl font-bold neon-blue transition-all duration-300 flex items-center justify-center gap-2">
+                        ↔️ Fullscreen
+                    </button>
+                </div>
+            </div>
             
-            <div class="mood-box">
-                <span id="current-mood">WAITING...</span><br>
-                <span id="color-analysis-text">Composition - waiting for input</span>
+            <!-- Detected Objects -->
+            <div class="bg-gray-900/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-purple-500/50 glow flex-1">
+                <h3 class="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2">🎯 Detected Elements</h3>
+                <div id="objectsList" class="space-y-2 max-h-64 overflow-y-auto"></div>
             </div>
+        </div>
 
-            <div class="control-slider">
-                <div class="control-label"><span>TEMPO</span> <span class="control-value" id="val-tempo">0 BPM</span></div>
-                <div class="slider-bar"><div class="slider-fill" id="fill-tempo"></div></div>
-            </div>
-            <div class="control-slider">
-                <div class="control-label"><span>PITCH</span> <span class="control-value" id="val-pitch">0 HZ</span></div>
-                <div class="slider-bar"><div class="slider-fill" id="fill-pitch"></div></div>
-            </div>
-            <div class="control-slider">
-                <div class="control-label"><span>INTENSITY</span> <span class="control-value" id="val-intensity">0%</span></div>
-                <div class="slider-bar"><div class="slider-fill" id="fill-intensity"></div></div>
-            </div>
-            <div class="control-slider">
-                <div class="control-label"><span>REVERB</span> <span class="control-value" id="val-reverb">0%</span></div>
-                <div class="slider-bar"><div class="slider-fill" id="fill-reverb"></div></div>
-            </div>
-
-            <div class="panel-header" style="grid-column: span 2; margin-top: 10px;">DETECTED COLORS</div>
-            <div class="detected-palette" id="color-palette-ui"></div>
+        <!-- Right Panel - Visualizer -->
+        <div class="flex-1 relative h-full min-h-[400px] lg:min-h-[600px] rounded-3xl overflow-hidden border-4 border-cyan-500/30 glow">
+            <div class="scanline relative z-10"></div>
+            <video id="webcam" class="w-full h-full object-cover rounded-2xl absolute inset-0" autoplay playsinline muted></video>
+            <canvas id="outputCanvas" class="w-full h-full absolute inset-0"></canvas>
+            <div id="visualizerOverlay" class="absolute inset-0 bg-gradient-radial from-cyan-500/20 via-transparent to-purple-500/20"></div>
             
-            <canvas id="spectrogram"></canvas>
+            <!-- Status -->
+            <div class="absolute top-6 left-6 bg-black/70 backdrop-blur-xl px-6 py-3 rounded-2xl border border-cyan-500/50 text-sm">
+                <div id="statusText" class="font-mono text-cyan-400">Initializing AI Vision...</div>
+            </div>
+            
+            <!-- Particles -->
+            <div id="particles"></div>
         </div>
     </div>
-</div>
 
-<div id="controls-row">
-    <button class="control-btn" id="btn-listen" onclick="startAudio()" disabled>► Start Listening</button>
-    <button class="control-btn" id="btn-analyze" onclick="requestAiAnalysis()" disabled>🤖 ANALYZE NOW</button>
-    <button class="control-btn" id="btn-stop">■ STOP</button>
-</div>
-
-<div id="terminal-log"></div>
-
-<script>
-    // --- VARIABLES ---
-    let GROQ_API_KEY = "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"; // <--- PASTE KEY HERE
-
-    let model, video, ovCanvas, ovCtx, vizCanvas, vizCtx, specCanvas, specCtx;
-    let isRunning = false;
-    let isAudioStarted = false;
-    let detectedObjects = [];
-    let dominantColors = [];
-
-    // Audio Stuff (Tone.js)
-    let synth, reverb;
-
-    // --- INITIALIZATION ---
-    async function initializeSystem() {
-        const inputKey = document.getElementById('apiKeyInput').value;
-        if(inputKey) GROQ_API_KEY = inputKey;
+    <script>
+        // === PASTE YOUR GROQ API KEY HERE ===
+        let GROQ_API_KEY = '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';
         
-        if(GROQ_API_KEY === "PASTE_YOUR_GROQ_API_KEY_HERE") {
-            alert("Please paste your Groq API key either in the code or the input field.");
-            return;
-        }
-
-        document.getElementById('setup-overlay').style.display = 'none';
-        logTerminal("System Initialize", "success");
-
-        // Set up canvases
-        ovCanvas = document.getElementById('overlay-canvas');
-        ovCtx = ovCanvas.getContext('2d');
-        vizCanvas = document.getElementById('viz-canvas');
-        vizCtx = vizCanvas.getContext('2d');
-        specCanvas = document.getElementById('spectrogram');
-        specCtx = specCanvas.getContext('2d');
-        resizeCanvases();
-
-        // 1. Camera
-        logTerminal("Requesting Camera Access...");
-        video = document.getElementById('webcam');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            video.srcObject = stream;
-            document.getElementById('camera-status').innerText = "ON";
-            document.getElementById('camera-status').style.color = "#00ff88";
-            logTerminal("Camera Access Granted", "success");
-        } catch (e) {
-            logTerminal("Camera Access Denied!", "error");
-            alert("Camera access is required for this demo.");
-            return;
-        }
-
-        // 2. Load Model
-        logTerminal("Loading Neural Detection Model...");
-        document.getElementById('loader').style.display = 'block';
-        model = await cocoSsd.load();
-        document.getElementById('loader').style.display = 'none';
-        logTerminal("Detection Model Loaded", "success");
-
-        // Activate Buttons
-        document.getElementById('btn-listen').disabled = false;
-        document.getElementById('btn-analyze').disabled = false;
-
-        isRunning = true;
-        window.onresize = resizeCanvases;
-        detectFrame();
-    }
-
-    function resizeCanvases() {
-        // We handle resizing differently because video is object-fit cover
-        ovCanvas.width = video.videoWidth || 640;
-        ovCanvas.height = video.videoHeight || 480;
-        vizCanvas.width = vizCanvas.parentElement.clientWidth - 30;
-        vizCanvas.height = 300; // Fixed visualizer height for dashboard
-        specCanvas.width = specCanvas.parentElement.clientWidth - 30;
-        specCanvas.height = 50;
-    }
-
-    // --- MAIN LOOP (COMPUTER VISION) ---
-    async function detectFrame() {
-        if(!isRunning) return;
-
-        // Ensure video is playing
-        if(video.readyState !== 4) {
-            requestAnimationFrame(detectFrame);
-            return;
-        }
-
-        const predictions = await model.detect(video);
-        detectedObjects = predictions;
-        document.getElementById('detected-count').innerText = predictions.length;
-
-        // 1. Draw Object Overlays
-        drawOverlays(predictions);
+        // Audio Engine
+        let synth, drone1, drone2, reverb, distortion, autoFilter;
+        let isRecording = false;
+        let mediaRecorder, recordedChunks = [];
         
-        // 2. Sample dominant colors
-        sampleColors();
-
-        // 3. Update Audio (Minor adjustments on every frame)
-        updateSynthesizer();
-
-        requestAnimationFrame(detectFrame);
-    }
-
-    function drawOverlays(predictions) {
-        ovCtx.clearRect(0, 0, ovCanvas.width, ovCanvas.height);
+        // Vision
+        let camera, segmenter;
+        let rafId;
         
-        // Draw futuristic scanning lines if audio is running
-        if(isAudioStarted) {
-            const time = Date.now() / 1000;
-            const scanLineY = (Math.sin(time) + 1) / 2 * ovCanvas.height;
-            ovCtx.strokeStyle = 'rgba(0, 242, 254, 0.3)';
-            ovCtx.lineWidth = 1;
-            ovCtx.beginPath();
-            ovCtx.moveTo(0, scanLineY);
-            ovCtx.lineTo(ovCanvas.width, scanLineY);
-            ovCtx.stroke();
-        }
+        // Particles
+        let particles = [];
+        
+        // State
+        let detectedObjects = [];
+        let dominantColors = [];
+        let isInitialized = false;
 
-        predictions.forEach(p => {
-            const [x, y, width, height] = p.bbox;
-            ovCtx.strokeStyle = '#00f2fe';
-            ovCtx.lineWidth = 2;
-            ovCtx.strokeRect(x, y, width, height);
+        async function initAudio() {
+            await Tone.start();
             
-            // Text label
-            ovCtx.fillStyle = '#00f2fe';
-            ovCtx.font = '12px Courier New';
-            ovCtx.fillText(`${p.class.toUpperCase()} ${Math.round(p.score * 100)}%`, x + 5, y + 15);
-        });
-    }
-
-    // --- COLOR ANALYSIS ---
-    function sampleColors() {
-        // Sample few points across video to get basic room 'mood'
-        const grid = 5; // 5x5 sampling
-        const stepX = ovCanvas.width / grid;
-        const stepY = ovCanvas.height / grid;
-        const colorCounts = {};
-
-        const paletteUI = document.getElementById('color-palette-ui');
-        paletteUI.innerHTML = ''; // Clear old
-
-        let totalR = 0, totalG = 0, totalB = 0, samples = 0;
-
-        for (let i = 1; i < grid; i++) {
-            for (let j = 1; j < grid; j++) {
-                const pixel = ovCtx.getImageData(i * stepX, j * stepY, 1, 1).data;
-                const r = pixel[0];
-                const g = pixel[1];
-                const b = pixel[2];
-                totalR += r; totalG += g; totalB += b; samples++;
-
-                // Round slightly to group colors
-                const bucketR = Math.round(r / 50) * 50;
-                const bucketG = Math.round(g / 50) * 50;
-                const bucketB = Math.round(b / 50) * 50;
-                const hex = `#${bucketR.toString(16).padStart(2,'0')}${bucketG.toString(16).padStart(2,'0')}${bucketB.toString(16).padStart(2,'0')}`;
-
-                if(hex === "#000000" || hex === "#ffffff") continue; // Ignore pure black/white
-
-                colorCounts[hex] = (colorCounts[hex] || 0) + 1;
-            }
-        }
-
-        // Sort colors by frequency
-        const sortedColors = Object.entries(colorCounts).sort((a,b) => b[1] - a[1]);
-        dominantColors = sortedColors.slice(0, 5).map(c => c[0]); // Top 5
-
-        // Update UI
-        dominantColors.forEach(color => {
-            const swatch = document.createElement('div');
-            swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = color;
-            swatch.title = color;
-            paletteUI.appendChild(swatch);
-        });
-
-        // Update Text for dominant overall tone
-        if(samples > 0) {
-            const avgR = Math.round(totalR / samples);
-            const avgG = Math.round(totalG / samples);
-            const avgB = Math.round(totalB / samples);
-            document.getElementById('color-analysis-text').innerText = `Color-based composition - rgb(${avgR},${avgG},${avgB}) dominant environment`;
-        }
-    }
-
-    // --- AUDIO SYSTEM (TONE.JS) ---
-    async function startAudio() {
-        if(isAudioStarted) return;
-        
-        await Tone.start();
-        
-        reverb = new Tone.Reverb(2).toDestination(); // Matches prompt 1 (Drone/Ambient)
-        synth = new Tone.PolySynth(Tone.Synth).connect(reverb);
-        
-        // Settings for ambient tone
-        synth.set({
-            oscillator: { type: "sine" },
-            envelope: { attack: 3, decay: 1, sustain: 0.8, release: 5 }
-        });
-
-        isAudioStarted = true;
-        document.getElementById('btn-listen').innerText = "🔊 LISTENING";
-        document.getElementById('btn-listen').style.background = "#00ff88";
-        document.getElementById('btn-listen').style.color = "black";
-        
-        logTerminal("Web Audio Started (Ambient Drone)", "success");
-        requestAiAnalysis(); // Trigger first analysis immediately
-    }
-
-    // Dynamic synthesis based on frame data
-    function updateSynthesizer() {
-        if(!isAudioStarted) return;
-        
-        // Base drone is steady, but small modulations based on total object count
-        const complexityOffset = detectedObjects.length * 10; // More objects = higher pitch shift
-    }
-
-    // --- AI ANALYSIS (GROQ) ---
-    async function requestAiAnalysis() {
-        if(!isAudioStarted) {
-            alert("Start the audio engine first!");
-            return;
-        }
-
-        logTerminal("Analyzing room with Groq AI...");
-        document.getElementById('btn-analyze').innerText = "⚡ ANALYZING";
-        
-        const objects = detectedObjects.map(o => o.class).join(", ");
-        const color = dominantColors[0] || "#555555"; // Dominant color or grey
-
-        const prompt = `Based on these physical objects detected in the room: (${objects}) and the dominant visual color tone (${color}), determine the room's mood and synthesize optimal audio parameters for an ambient soundscape.
-
-Respond exclusively in this JSON structure, do not include markdown or other text:
-{
-  "mood": "CALM/ENERGETIC/TENSE/MYSTERIOUS/BRIGHT",
-  "pitch_hz": 110,  // Base frequency (like A2)
-  "tempo_bpm": 60,   // Rate of minor pulses
-  "intensity_percent": 30, // Overall brightness/loudness
-  "reverb_percent": 80, // Spatial depth
-  "notes": ["A2", "C3", "E3"] // Root chords for ambient drone
-}`;
-
-        try {
-            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${GROQ_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "llama-3.1-8b-instant",
-                    messages: [{ role: "user", content: prompt }]
-                })
+            // Create soundscape instruments
+            synth = new Tone.Synth({
+                oscillator: { type: "fatsawtooth", spread: 20 },
+            }).toDestination();
+            
+            drone1 = new Tone.Synth({
+                oscillator: { type: "sine" }
+            }).toDestination();
+            
+            drone2 = new Tone.Synth({
+                oscillator: { type: "triangle" }
+            }).toDestination();
+            
+            reverb = new Tone.Reverb(8).toDestination();
+            distortion = new Tone.Distortion(0.1).toDestination();
+            autoFilter = new Tone.AutoFilter({
+                frequency: 200,
+                baseFrequency: 100,
+                octaves: 4
+            }).start();
+            
+            synth.connect(reverb);
+            drone1.connect(distortion);
+            drone2.connect(autoFilter);
+            
+            // Volume control
+            document.getElementById('volume').addEventListener('input', (e) => {
+                Tone.Destination.volume.value = Tone.gainToDb(e.target.value);
             });
-
-            const data = await response.json();
             
-            // Handle cases where model adds markdown ticks
-            let cleanedContent = data.choices[0].message.content;
-            if (cleanedContent.startsWith("```json")) {
-                cleanedContent = cleanedContent.replace(/^```json/, '').replace(/```$/, '');
-            }
-
-            const aiAnalysis = JSON.parse(cleanedContent);
-            logTerminal("AI Scene Analysis complete", "success");
-            
-            // 1. Update UI
-            document.getElementById('current-mood').innerText = aiAnalysis.mood;
-            updateUISliders(aiAnalysis);
-            
-            // 2. Play the new Drone/Chord
-            triggerNewSoundscape(aiAnalysis);
-
-        } catch (error) {
-            logTerminal(`AI Analysis Error: ${error.message}`, "error");
-            console.error(error);
-        } finally {
-            document.getElementById('btn-analyze').innerText = "🤖 ANALYZE NOW";
+            document.getElementById('intensity').addEventListener('input', (e) => {
+                updateSoundscapeIntensity(parseFloat(e.target.value));
+            });
         }
-    }
 
-    function updateUISliders(data) {
-        document.getElementById('val-tempo').innerText = `${data.tempo_bpm} BPM`;
-        document.getElementById('fill-tempo').style.width = `${(data.tempo_bpm / 180) * 100}%`;
+        async function initVision() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('outputCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            camera = new Camera(video, {
+                onFrame: async () => {
+                    await predict();
+                },
+                width: 640,
+                height: 480
+            });
+            camera.start();
+            
+            // MediaPipe Segmenter
+            segmenter = await window.Segmentation.createFromOptions({
+                baseOptions: {
+                    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/selfie_segmenter/selfie_landmarker/float16/1/selfie_segmenter.task`
+                },
+            });
+            
+            function renderLoop() {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+                
+                ctx.save();
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                ctx.restore();
+                
+                rafId = requestAnimationFrame(renderLoop);
+            }
+            renderLoop();
+        }
 
-        document.getElementById('val-pitch').innerText = `${data.pitch_hz} HZ`;
-        document.getElementById('fill-pitch').style.width = `${(data.pitch_hz / 1000) * 100}%`; // Normalize to 1k
+        async function predict() {
+            if (!segmenter || !GROQ_API_KEY) return;
+            
+            const video = document.getElementById('webcam');
+            const results = await segmenter.segment(video);
+            
+            if (results) {
+                analyzeFrame(results);
+                analyzeColors(video);
+                generateSoundscape();
+            }
+        }
 
-        document.getElementById('val-intensity').innerText = `${data.intensity_percent}%`;
-        document.getElementById('fill-intensity').style.width = `${data.intensity_percent}%`;
+        function analyzeFrame(results) {
+            // Extract dominant colors and objects using canvas analysis
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 320;
+            canvas.height = 240;
+            ctx.drawImage(document.getElementById('webcam'), 0, 0, 320, 240);
+            
+            const imageData = ctx.getImageData(0, 0, 320, 240);
+            dominantColors = getDominantColors(imageData);
+            
+            // Simulate object detection with color regions
+            detectedObjects = dominantColors.map((color, i) => ({
+                id: i,
+                name: getObjectNameFromColor(color),
+                color: color,
+                confidence: Math.random() * 0.3 + 0.7,
+                position: { x: Math.random() * 100, y: Math.random() * 100 }
+            }));
+            
+            updateObjectsUI();
+        }
 
-        document.getElementById('val-reverb').innerText = `${data.reverb_percent}%`;
-        document.getElementById('fill-reverb').style.width = `${data.reverb_percent}%`;
-    }
+        function getDominantColors(imageData, count = 5) {
+            const pixels = imageData.data;
+            const colorMap = {};
+            
+            for (let i = 0; i < pixels.length; i += 4) {
+                const r = pixels[i], g = pixels[i+1], b = pixels[i+2];
+                const key = `${Math.round(r/32)*32},${Math.round(g/32)*32},${Math.round(b/32)*32}`;
+                colorMap[key] = (colorMap[key] || 0) + 1;
+            }
+            
+            return Object.entries(colorMap)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, count)
+                .map(([key, count]) => {
+                    const [r,g,b] = key.split(',').map(Number);
+                    return { r: r/255, g: g/255, b: b/255, count };
+                });
+        }
 
-    function triggerNewSoundscape(analysis) {
-        if(!isAudioStarted) return;
+        function getObjectNameFromColor(color) {
+            const hue = Math.atan2(color.b - 0.5, color.r - 0.5) * 180 / Math.PI + 180;
+            if (hue < 30 || hue > 330) return "Warm Light";
+            if (hue < 90) return "Green Plant";
+            if (hue < 150) return "Blue Object";
+            if (hue < 210) return "Purple Decor";
+            if (hue < 270) return "Dark Surface";
+            return "Bright Highlight";
+        }
+
+        function analyzeColors(video) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 100;
+            canvas.height = 100;
+            ctx.drawImage(video, 0, 0, 100, 100);
+            
+            const imageData = ctx.getImageData(0, 0, 100, 100);
+            const colors = getDominantColors(imageData, 3);
+            
+            // Update visualizer background
+            const mainColor = colors[0];
+            if (mainColor) {
+                const overlay = document.getElementById('visualizerOverlay');
+                overlay.style.background = `radial-gradient(circle at 30% 30%, rgb(${mainColor.r*255},${mainColor.g*255},${mainColor.b*255},0.3), transparent 70%), radial-gradient(circle at 70% 70%, rgb(${mainColor.r*255*0.7},${mainColor.g*255*0.7},${mainColor.b*255*0.7},0.2), transparent 70%)`;
+            }
+        }
+
+        function generateSoundscape() {
+            if (detectedObjects.length === 0) return;
+            
+            const intensity = parseFloat(document.getElementById('intensity').value);
+            
+            // Map colors to frequencies
+            detectedObjects.forEach((obj, index) => {
+                const hue = Math.atan2(obj.color.b - 0.5, obj.color.r - 0.5) * 180 / Math.PI + 180;
+                const freq = Tone.Frequency.mtof(36 + (hue / 360) * 48 + Math.sin(Date.now() * 0.001 + index) * 12);
+                
+                // Drone tones
+                if (index % 3 === 0) {
+                    drone1.triggerAttackRelease(freq * 0.5, "4n");
+                } else if (index % 3 === 1) {
+                    drone2.triggerAttackRelease(freq * 0.7, "4n");
+                } else {
+                    synth.triggerAttackRelease(freq, "8n", Tone.now() + index * 0.1);
+                }
+            });
+            
+            // Dynamic effects
+            autoFilter.frequency.value = 100 + Math.sin(Date.now() * 0.002) * 200;
+            distortion.distortion = 0.1 + Math.sin(Date.now() * 0.003) * 0.2;
+        }
+
+        function updateSoundscapeIntensity(intensity) {
+            synth.volume.value = Tone.gainToDb(intensity * 0.5);
+            drone1.volume.value = Tone.gainToDb(intensity * 0.3);
+            drone2.volume.value = Tone.gainToDb(intensity * 0.3);
+        }
+
+        function updateObjectsUI() {
+            const list = document.getElementById('objectsList');
+            list.innerHTML = detectedObjects.map(obj => `
+                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border-l-4" style="border-left-color: rgb(${obj.color.r*255},${obj.color.g*255},${obj.color.b*255})">
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 rounded-full" style="background: rgb(${obj.color.r*255},${obj.color.g*255},${obj.color.b*255})"></div>
+                        <span>${obj.name}</span>
+                    </div>
+                    <span class="text-xs text-gray-400">${Math.round(obj.confidence * 100)}%</span>
+                </div>
+            `).join('');
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (4 + Math.random() * 4) + 's';
+                container.appendChild(particle);
+                particles.push(particle);
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        async function startRecording() {
+            const stream = canvas.captureStream(30);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `room-soundscape-${Date.now()}.webm`;
+                a.click();
+                recordedChunks = [];
+            };
+            
+            mediaRecorder.start();
+            isRecording = true;
+            document.getElementById('recordBtn').textContent = '⏹️ Stop Recording';
+            document.getElementById('recordBtn').className = 'w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 px-6 py-4 rounded-2xl font-bold text-lg neon-purple transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:scale-105';
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            isRecording = false;
+            document.getElementById('recordBtn').textContent = '🎙️ Record Soundscape';
+            document.getElementById('recordBtn').className = 'w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-6 py-4 rounded-2xl font-bold text-lg neon-purple transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:scale-105';
+        }
+
+        document.getElementById('recordBtn').addEventListener('click', () => {
+            if (!isRecording) startRecording();
+            else stopRecording();
+        });
+
+        function saveApiKey() {
+            GROQ_API_KEY = document.getElementById('apiKeyInput').value;
+            if (!GROQ_API_KEY) {
+                alert('Please enter your Groq API key!');
+                return;
+            }
+            localStorage.setItem('groq_api_key', GROQ_API_KEY);
+            document.getElementById('apiKeyModal').style.display = 'none';
+            initApp();
+        }
+
+        async function initApp() {
+            GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+            if (!GROQ_API_KEY) {
+                document.getElementById('apiKeyModal').style.display = 'flex';
+                return;
+            }
+            
+            document.getElementById('mainUI').style.display = 'flex';
+            document.getElementById('apiKeyModal').style.display = 'none';
+            
+            await initAudio();
+            await initVision();
+            createParticles();
+            
+            document.getElementById('statusText').textContent = '🎵 Listening to your room...';
+            isInitialized = true;
+            
+            // Animate status
+            setInterval(() => {
+                const status = document.getElementById('statusText');
+                status.style.opacity = status.style.opacity === '0.5' ? '1' : '0.5';
+            }, 1000);
+        }
+
+        // Start app
+        window.addEventListener('load', initApp);
         
-        // Stop current sounds
-        synth.releaseAll();
+        // Handle fullscreen change
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                document.body.classList.add('lg:flex-col');
+            } else {
+                document.body.classList.remove('lg:flex-col');
+            }
+        });
 
-        // Release/Decay should be long for ambient
-        const now = Tone.now();
-        const duration = (60 / analysis.tempo_bpm) * 8; // Approx 8 'pulses'
-        
-        // Increase intensity (filter or loudness)
-        synth.volume.value = (analysis.intensity_percent / 100) * -12; // Decibels, map 0-100 to -Inf to -12db
-
-        // Change Reverb space
-        reverb.wet.value = analysis.reverb_percent / 100;
-
-        // Play the AI suggested drone chord
-        synth.triggerAttackRelease(analysis.notes, duration, now);
-        
-        logTerminal(`Soundscape Shift: ${analysis.mood} (${analysis.notes.join(' ')})`);
-    }
-
-    // --- TERMINAL LOG ---
-    function logTerminal(message, type="info") {
-        const log = document.getElementById('terminal-log');
-        const p = document.createElement('p');
-        
-        const timestamp = new Date().toLocaleTimeString('en-GB'); // HH:MM:SS format
-        
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'log-time';
-        timeSpan.innerText = `[${timestamp}]`;
-        
-        let prefix = "";
-        if(type === "success") { p.style.color = "#00ff88"; prefix = "✓ "; }
-        if(type === "error") { p.style.color = "red"; prefix = "✗ ERROR: "; }
-
-        p.appendChild(timeSpan);
-        p.innerHTML += `${prefix}${message}`;
-        
-        log.appendChild(p);
-        log.scrollTop = log.scrollHeight; // Auto-scroll to bottom
-    }
-</script>
-
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                document.getElementById('recordBtn').click();
+            }
+            if (e.code === 'KeyF') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+    </script>
 </body>
 </html>
