@@ -8,306 +8,333 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <style>
 :root {
-  --bg: #050508;
-  --surface: #0d0d14;
-  --card: #12121e;
-  --border: #1e1e32;
-  --accent: #7c3aed;
-  --accent2: #06b6d4;
+  --bg: #020104;
+  --surface: #0a0a12;
+  --card: #111127;
+  --border: #1a1a2e;
+  --accent: #8b5cf6;
+  --accent2: #0ea5e9;
   --accent3: #f59e0b;
-  --text: #f0f0ff;
-  --dim: #a0a0cc;
-  --font: 'Orbitron', monospace;
-  --mono: 'Space Mono', monospace;
-  --glow: 0 0 20px rgba(124,58,237,0.4);
-  --glow2: 0 0 20px rgba(6,182,212,0.4);
-  --radius: 16px;
-  --spacing: 20px;
+  --text: #f8fafc;
+  --text-dim: #94a3b8;
+  --glow: 0 0 20px #8b5cf666;
+  --glow2: 0 0 20px #0ea5e966;
+  --font-main: 'Orbitron', monospace;
+  --font-mono: 'Space Mono', monospace;
 }
 
 * { 
-  margin:0; 
-  padding:0; 
-  box-sizing:border-box; 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font);
+  font-family: var(--font-main);
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.4;
 }
 
-/* CLEAN BACKGROUND */
+/* Background Grid */
 body::before {
-  content:'';
-  position:fixed;
-  inset:0;
+  content: '';
+  position: fixed;
+  inset: 0;
   background-image:
-    linear-gradient(rgba(124,58,237,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124,58,237,0.02) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events:none;
-  z-index:0;
+    linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .container {
-  position:relative;
-  z-index:1;
-  max-width:1000px;
-  margin:0 auto;
-  padding: var(--spacing);
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  gap: var(--spacing);
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 24px;
 }
 
-/* HEADER - CLEAN & MINIMAL */
+/* Header */
 .header {
-  text-align:center;
-  padding: 40px 0 20px 0;
+  text-align: center;
+  padding: 32px 0;
 }
 .logo {
-  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 900;
-  letter-spacing: -2px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  letter-spacing: 0.1em;
+  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  filter: drop-shadow(0 0 24px rgba(139, 92, 246, 0.4));
   margin-bottom: 8px;
-  filter: drop-shadow(var(--glow));
 }
 .tagline {
-  font-family: var(--mono);
-  font-size: 0.85rem;
-  color: var(--dim);
-  letter-spacing: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
   font-weight: 400;
 }
 
-/* STATUS BAR - COMPACT */
+/* Status Bar */
 .status-bar {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 20px;
+  border-radius: 16px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-family: var(--mono);
-  font-size: 0.8rem;
-}
-.status-group {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 .status-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--dim);
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-dim);
 }
-.dot {
-  width: 8px;
-  height: 8px;
+.status-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #333;
+  background: #374151;
+  box-shadow: 0 0 8px currentColor;
   animation: pulse 2s infinite;
 }
-.dot.green { background: #22c55e; box-shadow: 0 0 12px #22c55e; }
-.dot.blue { background: var(--accent2); box-shadow: 0 0 12px var(--accent2); animation-delay: 0.3s; }
-.dot.yellow { background: var(--accent3); box-shadow: 0 0 12px var(--accent3); }
+.status-dot.active.green { 
+  background: #10b981; 
+  animation-delay: 0s; 
+}
+.status-dot.active.blue { 
+  background: var(--accent2); 
+  animation-delay: 0.5s; 
+}
+.status-dot.active.yellow { 
+  background: var(--accent3); 
+}
 @keyframes pulse { 
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
+  50% { opacity: 0.5; transform: scale(1.1); }
 }
 
-/* MAIN CONTENT GRID */
-.content-grid {
+/* Main Content Grid */
+.main-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--spacing);
-  margin: 0 -10px;
+  gap: 24px;
+  align-items: start;
 }
 @media (max-width: 768px) {
-  .content-grid { grid-template-columns: 1fr; margin: 0; }
+  .main-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
-/* MEDIA CARDS - CLEAN */
-.media-card {
+/* Card Styles */
+.card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 20px;
   overflow: hidden;
   position: relative;
+  backdrop-filter: blur(10px);
 }
-.media-card video, .media-card canvas {
+.card-header {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Webcam Card */
+.webcam-card {
+  aspect-ratio: 4 / 3;
+  position: relative;
+}
+.webcam-video {
   width: 100%;
-  height: 280px;
+  height: 100%;
   object-fit: cover;
   display: block;
+  transform: scaleX(-1);
 }
-.media-label {
+.webcam-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, 
+    transparent 40%, 
+    rgba(2, 1, 4, 0.85) 80%);
+  pointer-events: none;
+}
+.webcam-label {
   position: absolute;
   top: 16px;
   left: 16px;
-  background: rgba(18, 18, 30, 0.9);
+  background: rgba(17, 17, 39, 0.9);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 12px;
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  letter-spacing: 1.5px;
-  color: var(--dim);
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
 }
-
-/* PLACEHOLDER */
-.placeholder {
-  height: 280px;
+.webcam-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
+  color: var(--text-dim);
   background: var(--surface);
-  color: var(--dim);
+  font-family: var(--font-mono);
 }
-.placeholder-icon { 
-  font-size: 3rem; 
-  opacity: 0.3; 
-}
-.placeholder-text { 
-  font-family: var(--mono); 
-  font-size: 0.9rem; 
-  letter-spacing: 1px; 
+.webcam-placeholder .icon {
+  font-size: 3rem;
+  opacity: 0.3;
 }
 
-/* SCENE CARD */
+/* Visualizer Card */
+.visualizer-card {
+  aspect-ratio: 4 / 3;
+}
+.visualizer-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Scene Analysis Card */
 .scene-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
   grid-column: 1 / -1;
 }
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  font-family: var(--mono);
-  font-size: 0.85rem;
-  color: var(--dim);
-  letter-spacing: 2px;
-}
-.card-header::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-  margin-left: 12px;
-}
-
-.tags-container {
+.objects-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 20px;
-  min-height: 32px;
+  padding: 16px 20px;
+  min-height: 48px;
 }
-.tag {
-  background: var(--surface);
-  border: 1px solid var(--border);
+.object-tag {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 20px;
-  padding: 6px 14px;
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  color: var(--accent2);
-  animation: tagAppear 0.4s ease-out;
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--accent);
+  animation: fadeInUp 0.4s ease;
 }
-@keyframes tagAppear {
-  from { opacity: 0; transform: translateY(8px) scale(0.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
-.colors-row {
-  display: flex;
+.color-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  padding: 0 20px 20px;
 }
 .color-swatch {
-  flex: 1;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
-.color-swatch:hover {
-  transform: scale(1.05);
-  box-shadow: var(--glow2);
+.color-swatch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(45deg, var(--accent), var(--accent2));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
+.color-swatch:hover::after { opacity: 1; }
 
-/* AI ANALYSIS CARD */
+/* AI Card */
 .ai-card {
-  background: var(--card);
-  border: 2px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 32px;
-  box-shadow: var(--glow);
-  grid-column: 1 / -1;
+  border-color: var(--accent);
+  box-shadow: 0 0 32px rgba(139, 92, 246, 0.15);
 }
 .mood-display {
-  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
   font-weight: 900;
-  letter-spacing: -1px;
+  letter-spacing: 0.1em;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 12px;
+  text-shadow: var(--glow);
+  margin: 16px 20px 12px;
   min-height: 48px;
-  text-align: center;
+  display: flex;
+  align-items: center;
 }
 .ai-description {
-  font-family: var(--mono);
-  font-size: 1rem;
-  color: var(--dim);
-  text-align: center;
-  margin-bottom: 28px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  padding: 0 20px;
   line-height: 1.6;
   min-height: 72px;
 }
-
 .params-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 20px;
 }
-.param-card {
+.param-item {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 16px;
+  padding: 12px;
 }
 .param-label {
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  color: var(--dim);
-  letter-spacing: 1.5px;
-  margin-bottom: 6px;
-  text-transform: uppercase;
+  font-size: 0.6875rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
 }
 .param-value {
-  font-family: var(--mono);
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--accent2);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .param-bar {
   height: 4px;
@@ -322,794 +349,809 @@ body::before {
   transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* WAVEFORM */
-.wave-container {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  height: 90px;
+/* Waveform */
+.waveform {
+  height: 96px;
   display: flex;
-  align-items: flex-end;
+  align-items: end;
   gap: 2px;
+  padding: 20px;
   overflow: hidden;
 }
 .wave-bar {
   flex: 1;
   background: linear-gradient(to top, var(--accent), var(--accent2));
   border-radius: 2px;
-  height: 6px;
-  transition: height 0.15s ease-out;
-  min-height: 3px;
+  height: 4px;
+  min-height: 2px;
+  transition: height 0.12s ease;
+  filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.3));
 }
 
-/* CONTROLS - CLEAN ROW */
+/* Controls */
 .controls {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  padding: 8px 0;
 }
 .btn {
   flex: 1;
-  min-width: 160px;
-  padding: 18px 24px;
-  border-radius: var(--radius);
+  padding: 16px 24px;
+  border-radius: 16px;
   border: none;
-  font-family: var(--font);
-  font-size: 0.95rem;
+  font-family: var(--font-main);
+  font-size: 0.875rem;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  min-width: 160px;
+  position: relative;
+  overflow: hidden;
 }
-.btn:active { transform: translateY(1px); }
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+.btn:hover::before { transform: translateX(100%); }
+.btn:active { transform: translateY(2px); }
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), #5b21b6);
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
   color: white;
   box-shadow: var(--glow);
 }
 .btn-primary:hover { 
-  box-shadow: 0 0 30px rgba(124,58,237,0.6);
+  box-shadow: 0 0 32px rgba(139, 92, 246, 0.6);
   transform: translateY(-2px);
 }
 .btn-secondary {
-  background: rgba(255,255,255,0.05);
+  background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
 }
 .btn-secondary:hover { 
-  background: rgba(255,255,255,0.1);
   border-color: var(--accent2);
   color: var(--accent2);
-}
-.btn-danger {
-  background: rgba(255,255,255,0.05);
-  color: var(--text);
-  border: 1px solid var(--border);
+  box-shadow: var(--glow2);
 }
 .btn-danger:hover { 
   border-color: #ef4444;
   color: #ef4444;
 }
 
-/* LOG */
+/* Log */
 .log-container {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
   max-height: 160px;
   overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
 }
-.log-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  font-family: var(--mono);
-  font-size: 0.85rem;
-  color: var(--dim);
-  letter-spacing: 1.5px;
+.log-container::-webkit-scrollbar {
+  width: 6px;
 }
-.log-header::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
+.log-container::-webkit-scrollbar-track { background: transparent; }
+.log-container::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 3px;
 }
 .log-entry {
-  font-family: var(--mono);
-  font-size: 0.85rem;
-  color: var(--dim);
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(30,30,50,0.5);
-  animation: logSlide 0.3s ease-out;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(26, 26, 46, 0.5);
+  animation: fadeIn 0.3s ease;
 }
-@keyframes logSlide {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.log-time { color: var(--accent2); font-weight: 500; }
-.log-good .log-time { color: #22c55e; }
-.log-warn .log-time { color: var(--accent3); }
-
-/* API KEY MODAL */
-.api-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(5,5,8,0.95);
-  backdrop-filter: blur(20px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.4s ease;
-}
-.api-modal.active {
-  opacity: 1;
-  pointer-events: all;
-}
-.api-card {
-  background: var(--card);
-  border: 2px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 40px;
-  max-width: 420px;
-  width: 90%;
-  text-align: center;
-  box-shadow: var(--glow);
-}
-.api-logo {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-}
-.api-input {
-  width: 100%;
-  padding: 16px 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 1rem;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
-}
-.api-input:focus {
-  outline: none;
-  border-color: var(--accent2);
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
-}
-.api-btn {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-family: var(--font);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-.api-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glow2);
-}
-.api-help {
-  margin-top: 16px;
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  color: var(--dim);
-}
+.log-entry .timestamp { color: var(--accent2); }
+.log-entry.success .timestamp { color: #10b981; }
+.log-entry.warning .timestamp { color: var(--accent3); }
 </style>
 </head>
 <body>
-<!-- API KEY MODAL -->
-<div class="api-modal" id="apiModal">
-  <div class="api-card">
-    <div class="api-logo">🔮</div>
-    <h2>RoomSound</h2>
-    <p style="font-family:var(--mono);color:var(--dim);margin-bottom:24px;font-size:0.95rem;">
-      Enter your <strong>Groq API Key</strong> to enable AI analysis
-    </p>
-    <input type="password" class="api-input" id="apiKeyInput" placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-    <button class="api-btn" onclick="saveApiKey()">Activate AI</button>
-    <div class="api-help">
-      Get free key: <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent2)">console.groq.com/keys</a>
-    </div>
-  </div>
-</div>
-
 <div class="container">
 
-  <!-- HEADER -->
+  <!-- Header -->
   <header class="header">
-    <h1 class="logo">ROOMSOUND</h1>
-    <p class="tagline">AI Audio Visualizer — Your Room Composes Its Own Music</p>
+    <h1 class="logo">RoomSound</h1>
+    <p class="tagline">AI-Powered Room Audio Visualizer</p>
   </header>
 
-  <!-- STATUS BAR -->
+  <!-- Status Bar -->
   <div class="status-bar">
-    <div class="status-group">
-      <div class="status-item">
-        <div class="dot" id="dot-cam"></div>
-        <span id="txt-cam">CAMERA OFF</span>
-      </div>
-      <div class="status-item">
-        <div class="dot" id="dot-ai"></div>
-        <span id="txt-ai">AI OFFLINE</span>
-      </div>
-      <div class="status-item">
-        <div class="dot" id="dot-sound"></div>
-        <span id="txt-sound">SOUND OFF</span>
-      </div>
+    <div class="status-item">
+      <div class="status-dot" id="status-cam"></div>
+      <span id="status-cam-text">Camera Offline</span>
     </div>
-    <div class="status-item" id="obj-count" style="color:var(--accent3);font-weight:500;">
-      0 objects detected
+    <div class="status-item">
+      <div class="status-dot" id="status-ai"></div>
+      <span id="status-ai-text">AI Standby</span>
+    </div>
+    <div class="status-item">
+      <div class="status-dot" id="status-audio"></div>
+      <span id="status-audio-text">Audio Off</span>
+    </div>
+    <div class="status-item" id="objects-count" style="color: var(--accent3); font-family: var(--font-mono);">
+      0 Objects Detected
     </div>
   </div>
 
-  <!-- MAIN CONTENT -->
-  <div class="content-grid">
+  <!-- Main Grid -->
+  <div class="main-grid">
 
-    <!-- CAMERA CARD -->
-    <div class="media-card cam-card" id="camCard">
-      <div class="placeholder" id="camPlaceholder">
-        <div class="placeholder-icon">📷</div>
-        <p class="placeholder-text">Camera Ready</p>
+    <!-- Webcam -->
+    <div class="card webcam-card" id="webcam-container">
+      <div class="card-header">Live Camera Feed</div>
+      <div class="webcam-placeholder" id="webcam-placeholder">
+        <div class="icon">📷</div>
+        <p>Camera not started</p>
+        <p style="font-size: 0.75rem; opacity: 0.6;">Click START to begin</p>
       </div>
-      <video id="video" autoplay muted playsinline style="display:none;"></video>
-      <canvas id="colorCanvas" style="display:none;"></canvas>
-      <div class="media-label">Live Camera</div>
+      <video id="webcam-video" autoplay muted playsinline style="display: none;"></video>
+      <canvas id="color-analysis" style="display: none;"></canvas>
+      <div class="webcam-overlay"></div>
+      <div class="webcam-label">LIVE</div>
     </div>
 
-    <!-- VISUALIZER CARD -->
-    <div class="media-card viz-card">
-      <canvas id="vizCanvas"></canvas>
-      <div class="media-label">Sound Visualizer</div>
+    <!-- Visualizer -->
+    <div class="card visualizer-card">
+      <div class="card-header">Audio Visualizer</div>
+      <canvas id="visualizer-canvas" class="visualizer-canvas"></canvas>
     </div>
 
   </div>
 
-  <!-- SCENE ANALYSIS -->
-  <div class="scene-card">
-    <div class="card-header">
-      <span>Scene Analysis</span>
+  <!-- Scene Analysis -->
+  <div class="card scene-card">
+    <div class="card-header">Scene Analysis</div>
+    <div class="objects-grid" id="objects-grid">
+      <div class="object-tag" style="color: var(--text-dim);">Waiting for analysis...</div>
     </div>
-    <div class="tags-container" id="tagsContainer">
-      <div class="tag" style="color:var(--dim);">Waiting for camera...</div>
-    </div>
-    <div class="colors-row">
-      <div class="color-swatch" id="color1" style="background:#1a1a2e;"></div>
-      <div class="color-swatch" id="color2" style="background:#16213e;"></div>
-      <div class="color-swatch" id="color3" style="background:#0f0f23;"></div>
+    <div class="color-row">
+      <div class="color-swatch" id="color-1" style="background: #1e1b4b;"></div>
+      <div class="color-swatch" id="color-2" style="background: #1e1b4b;"></div>
+      <div class="color-swatch" id="color-3" style="background: #1e1b4b;"></div>
     </div>
   </div>
 
-  <!-- AI COMPOSITION -->
-  <div class="ai-card">
-    <div class="card-header">
-      <span>AI Composition Engine</span>
-    </div>
-    <div class="mood-display" id="moodDisplay">WAITING</div>
-    <div class="ai-description" id="aiDescription">
-      Point camera at your room. AI will analyze and compose unique music.
+  <!-- AI Composition -->
+  <div class="card ai-card">
+    <div class="card-header">AI Music Composition</div>
+    <div class="mood-display" id="mood-display">WAITING...</div>
+    <div class="ai-description" id="ai-description">
+      Point your camera at your room. The AI will analyze the environment and compose a unique soundscape.
     </div>
     <div class="params-grid">
-      <div class="param-card">
+      <div class="param-item">
         <div class="param-label">Tempo</div>
-        <div class="param-value" id="tempoValue">--</div>
-        <div class="param-bar"><div class="param-fill" id="tempoBar" style="width:0%"></div></div>
+        <div class="param-value" id="param-tempo">-- BPM</div>
+        <div class="param-bar"><div class="param-fill" id="bar-tempo"></div></div>
       </div>
-      <div class="param-card">
+      <div class="param-item">
         <div class="param-label">Pitch</div>
-        <div class="param-value" id="pitchValue">--</div>
-        <div class="param-bar"><div class="param-fill" id="pitchBar" style="width:0%"></div></div>
+        <div class="param-value" id="param-pitch">-- Hz</div>
+        <div class="param-bar"><div class="param-fill" id="bar-pitch"></div></div>
       </div>
-      <div class="param-card">
+      <div class="param-item">
         <div class="param-label">Intensity</div>
-        <div class="param-value" id="intensityValue">--</div>
-        <div class="param-bar"><div class="param-fill" id="intensityBar" style="width:0%"></div></div>
+        <div class="param-value" id="param-intensity">--%</div>
+        <div class="param-bar"><div class="param-fill" id="bar-intensity"></div></div>
       </div>
-      <div class="param-card">
+      <div class="param-item">
         <div class="param-label">Reverb</div>
-        <div class="param-value" id="reverbValue">--</div>
-        <div class="param-bar"><div class="param-fill" id="reverbBar" style="width:0%"></div></div>
+        <div class="param-value" id="param-reverb">--%</div>
+        <div class="param-bar"><div class="param-fill" id="bar-reverb"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- WAVEFORM -->
-  <div class="wave-container" id="waveContainer"></div>
+  <!-- Waveform -->
+  <div class="card" id="waveform-container">
+    <div class="card-header">Live Waveform</div>
+    <div class="waveform" id="waveform"></div>
+  </div>
 
-  <!-- CONTROLS -->
+  <!-- Controls -->
   <div class="controls">
-    <button class="btn btn-primary" id="startBtn">
+    <button class="btn btn-primary" id="btn-start">
       ▶ Start Listening
     </button>
-    <button class="btn btn-secondary" id="analyzeBtn" disabled>
-      🤖 Analyze Scene
+    <button class="btn btn-secondary" id="btn-analyze" disabled>
+      🤖 Analyze Now
     </button>
-    <button class="btn btn-danger" id="stopBtn">
-      ⏹ Stop
+    <button class="btn btn-secondary btn-danger" id="btn-stop">
+      ■ Stop
     </button>
   </div>
 
-  <!-- LOG -->
-  <div class="log-container">
-    <div class="log-header">
-      <span>Live Log</span>
-    </div>
-    <div id="logContainer"></div>
+  <!-- Log -->
+  <div class="card">
+    <div class="card-header">Activity Log</div>
+    <div class="log-container" id="activity-log"></div>
   </div>
 
 </div>
 
 <script>
-// ===== STATE =====
-let stream = null;
-let synth = null;
-let animationId = null;
-let analyzeInterval = null;
+// ===== CONFIGURATION =====
+// ⚠️ REPLACE WITH YOUR ACTUAL GROQ API KEY ⚠️
+const GROQ_API_KEY = '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'; // Get free key at https://console.groq.com/keys
+
+// ===== GLOBALS =====
+let mediaStream = null;
+let audioSynth = null;
+let analysisInterval = null;
+let vizAnimationId = null;
+let waveAnimationId = null;
 let isActive = false;
-let apiKey = localStorage.getItem('roomsound_api') || '';
+let currentComposition = {
+  tempo: 80,
+  pitch: 440,
+  intensity: 0.5,
+  reverb: 0.3,
+  instrument: 'sine'
+};
+let ambientSequence = null;
 
-// ===== ELEMENTS =====
-const video = document.getElementById('video');
-const colorCanvas = document.getElementById('colorCanvas');
-const vizCanvas = document.getElementById('vizCanvas');
-const vizCtx = vizCanvas.getContext('2d');
-const apiModal = document.getElementById('apiModal');
-const apiInput = document.getElementById('apiKeyInput');
-
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded', () => {
-  if (apiKey) {
-    initApp();
-  } else {
-    showApiModal();
+// DOM Elements
+const elements = {
+  video: document.getElementById('webcam-video'),
+  colorCanvas: document.getElementById('color-analysis'),
+  vizCanvas: document.getElementById('visualizer-canvas'),
+  vizCtx: null,
+  webcamPlaceholder: document.getElementById('webcam-placeholder'),
+  waveform: document.getElementById('waveform'),
+  objectsGrid: document.getElementById('objects-grid'),
+  log: document.getElementById('activity-log'),
+  buttons: {
+    start: document.getElementById('btn-start'),
+    analyze: document.getElementById('btn-analyze'),
+    stop: document.getElementById('btn-stop')
   }
-  createWaveBars();
-});
+};
 
-// ===== API KEY =====
-function showApiModal() {
-  apiModal.classList.add('active');
-}
-
-function saveApiKey() {
-  apiKey = apiInput.value.trim();
-  if (!apiKey.startsWith('gsk_')) {
-    alert('Please enter a valid Groq API key (starts with gsk_)');
-    return;
+// ===== UTILITY FUNCTIONS =====
+function logMessage(message, type = 'info') {
+  const timestamp = new Date().toLocaleTimeString('en-US', { 
+    hour12: false, 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+  });
+  const logEntry = document.createElement('div');
+  logEntry.className = `log-entry ${type}`;
+  logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+  
+  elements.log.prepend(logEntry);
+  if (elements.log.children.length > 25) {
+    elements.log.removeChild(elements.log.lastElementChild);
   }
-  localStorage.setItem('roomsound_api', apiKey);
-  apiModal.classList.remove('active');
-  initApp();
+  
+  // Auto-scroll
+  elements.log.scrollTop = 0;
 }
 
-// ===== APP INIT =====
-async function initApp() {
-  log('RoomSound initialized', 'good');
-  setupEventListeners();
+function updateStatus(id, text, isActive = false, color = 'green') {
+  const dot = document.getElementById(id);
+  const textEl = document.getElementById(id + '-text');
+  
+  if (dot) {
+    dot.className = `status-dot ${isActive ? `active ${color}` : ''}`;
+  }
+  if (textEl) {
+    textEl.textContent = text;
+  }
 }
 
-// ===== START APP =====
-async function startListening() {
+function createWaveformBars(count = 48) {
+  elements.waveform.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    bar.id = `wave-bar-${i}`;
+    elements.waveform.appendChild(bar);
+  }
+}
+
+// ===== CORE APPLICATION FUNCTIONS =====
+async function startApp() {
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment', width: { ideal: 1280 } },
-      audio: false 
+    // Request camera access
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { 
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
     });
+
+    elements.video.srcObject = mediaStream;
+    elements.video.style.display = 'block';
+    elements.webcamPlaceholder.style.display = 'none';
     
-    video.srcObject = stream;
-    video.style.display = 'block';
-    document.getElementById('camPlaceholder').style.display = 'none';
+    updateStatus('status-cam', 'Camera Active', true, 'green');
+    logMessage('✅ Camera initialized successfully', 'success');
     
-    updateStatus('dot-cam', 'txt-cam', true, 'LIVE');
-    log('✅ Camera activated', 'good');
-    
+    // Initialize audio context
     await Tone.start();
-    await setupAudio();
-    updateStatus('dot-sound', 'txt-sound', true, 'ACTIVE');
+    initializeAudioEngine();
+    updateStatus('status-audio', 'Audio Engine Active', true, 'yellow');
+    logMessage('✅ Audio engine started', 'success');
+
+    // Start visualizations
+    initializeVisualizer();
+    createWaveformBars();
+    startWaveAnimation();
     
+    // Enable analyze button and start auto-analysis
+    elements.buttons.analyze.disabled = false;
+    analysisInterval = setInterval(() => analyzeScene(), 10000);
+    setTimeout(() => analyzeScene(), 2500);
+
     isActive = true;
-    document.getElementById('analyzeBtn').disabled = false;
-    document.getElementById('startBtn').innerHTML = '⏹ Stop Listening';
-    document.getElementById('startBtn').classList.replace('btn-primary', 'btn-danger');
-    
-    startVisualizer();
-    analyzeInterval = setInterval(analyzeScene, 5000);
-    setTimeout(analyzeScene, 1500);
-    
-  } catch (err) {
-    log('❌ Camera permission denied: ' + err.message, 'warn');
+    elements.buttons.start.disabled = true;
+    elements.buttons.stop.disabled = false;
+
+    logMessage('🎵 RoomSound is now listening...', 'success');
+
+  } catch (error) {
+    logMessage(`❌ Camera error: ${error.message}`, 'warning');
+    alert('Camera access required! Please allow camera permissions and refresh.');
   }
 }
 
-// ===== STOP APP =====
-function stopListening() {
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-  }
-  if (synth) {
-    synth.dispose();
-    synth = null;
-  }
-  if (analyzeInterval) {
-    clearInterval(analyzeInterval);
-    analyzeInterval = null;
-  }
-  if (animationId) {
-    cancelAnimationFrame(animationId);
+function stopApp() {
+  // Cleanup streams
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+    mediaStream = null;
   }
   
-  video.style.display = 'none';
-  document.getElementById('camPlaceholder').style.display = 'flex';
+  // Cleanup audio
+  if (audioSynth) {
+    audioSynth.dispose();
+    audioSynth = null;
+  }
+  if (ambientSequence) {
+    ambientSequence.dispose();
+    ambientSequence = null;
+  }
+  Tone.Transport.stop();
   
-  updateStatus('dot-cam', 'txt-cam', false, 'OFF');
-  updateStatus('dot-ai', 'txt-ai', false, 'STANDBY');
-  updateStatus('dot-sound', 'txt-sound', false, 'OFF');
-  document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('startBtn').innerHTML = '▶ Start Listening';
-  document.getElementById('startBtn').classList.replace('btn-danger', 'btn-primary');
+  // Cleanup intervals and animations
+  if (analysisInterval) {
+    clearInterval(analysisInterval);
+    analysisInterval = null;
+  }
+  if (vizAnimationId) {
+    cancelAnimationFrame(vizAnimationId);
+    vizAnimationId = null;
+  }
+  if (waveAnimationId) {
+    cancelAnimationFrame(waveAnimationId);
+    waveAnimationId = null;
+  }
+
+  // Reset UI
+  elements.video.style.display = 'none';
+  elements.webcamPlaceholder.style.display = 'flex';
+  elements.buttons.analyze.disabled = true;
+  elements.buttons.start.disabled = false;
+  elements.buttons.stop.disabled = true;
+  
+  updateStatus('status-cam', 'Camera Offline');
+  updateStatus('status-ai', 'AI Standby');
+  updateStatus('status-audio', 'Audio Off');
   
   isActive = false;
-  log('⏹ Session ended');
+  logMessage('⏹️ RoomSound stopped', 'info');
 }
 
 // ===== AUDIO ENGINE =====
-async function setupAudio() {
-  const reverb = new Tone.Reverb({ 
-    decay: 4, 
-    wet: 0.5 
+function initializeAudioEngine() {
+  // Create effects chain
+  const reverb = new Tone.Reverb({
+    decay: 4,
+    wet: 0.35
   }).toDestination();
   
-  const delay = new Tone.FeedbackDelay('8n.', 0.4).connect(reverb);
+  const delay = new Tone.FeedbackDelay({
+    delayTime: '8n',
+    feedback: 0.25,
+    wet: 0.2
+  }).connect(reverb);
   
-  synth = new Tone.PolySynth(Tone.Synth, {
+  // Create polyphonic synth
+  audioSynth = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: 'sine' },
     envelope: { 
-      attack: 0.8, 
-      decay: 0.5, 
-      sustain: 0.4, 
-      release: 3 
+      attack: 0.3, 
+      decay: 0.4, 
+      sustain: 0.7, 
+      release: 1.8 
     }
   }).connect(delay);
   
-  synth.volume.value = -15;
+  audioSynth.volume.value = -12;
+  startAmbientMusic();
+}
+
+function startAmbientMusic() {
+  if (ambientSequence) {
+    ambientSequence.dispose();
+  }
+
+  const scales = {
+    CALM: ['C4', 'E4', 'G4', 'B4', 'D5', 'G5'],
+    PEACEFUL: ['C4', 'G4', 'E4', 'A4', 'C5', 'E5'],
+    ENERGETIC: ['C4', 'E4', 'G4', 'Bb4', 'D5', 'F5'],
+    MYSTERIOUS: ['C4', 'Eb4', 'G4', 'Bb4', 'Db5', 'F5'],
+    INTENSE: ['C4', 'D4', 'F#4', 'A4', 'C5', 'E5'],
+    DARK: ['C3', 'Eb3', 'G3', 'Bb3', 'Db4', 'F4']
+  };
+
+  const mood = document.getElementById('mood-display').textContent;
+  const scale = scales[mood] || scales.CALM;
+
+  Tone.Transport.bpm.value = currentComposition.tempo;
   
-  // Start ambient loop
-  Tone.Transport.bpm.value = 72;
+  ambientSequence = new Tone.Sequence((time, note) => {
+    if (audioSynth && isActive) {
+      const velocity = Math.max(0.3, currentComposition.intensity * 0.8);
+      audioSynth.triggerAttackRelease(note, '4n', time, velocity);
+    }
+  }, scale, '4n');
+
+  ambientSequence.start(0);
   Tone.Transport.start();
 }
 
-// ===== SCENE ANALYSIS =====
-async function analyzeScene() {
-  if (!isActive) return;
-  
-  updateStatus('dot-ai', 'txt-ai', true, 'ANALYZING');
-  log('🔍 Analyzing scene...');
-  
-  // Extract colors
-  const colors = extractColors();
-  updateColors(colors);
-  
-  // Detect objects (heuristic)
-  const objects = detectObjects(colors);
-  updateObjects(objects, colors.length);
-  
-  // AI Analysis
-  const aiResponse = await getAIComposition(colors, objects);
-  applyComposition(aiResponse || generateFallback(colors));
+// ===== VISUALIZER =====
+function initializeVisualizer() {
+  const canvas = elements.vizCanvas;
+  const ctx = canvas.getContext('2d');
+  elements.vizCtx = ctx;
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  animateVisualizer();
 }
 
-// ===== COLOR EXTRACTION =====
-function extractColors() {
-  if (!video.videoWidth) return ['#1a1a2e', '#16213e', '#0f0f23'];
+function animateVisualizer() {
+  const canvas = elements.vizCanvas;
+  const ctx = elements.vizCtx;
+  const rect = canvas.getBoundingClientRect();
   
-  colorCanvas.width = 100;
-  colorCanvas.height = 75;
-  const ctx = colorCanvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, 100, 75);
-  
-  const imageData = ctx.getImageData(0, 0, 100, 75);
-  const colors = {};
-  
-  for (let i = 0; i < imageData.data.length; i += 12) {
-    const r = Math.round(imageData.data[i] / 32) * 32;
-    const g = Math.round(imageData.data[i + 1] / 32) * 32;
-    const b = Math.round(imageData.data[i + 2] / 32) * 32;
-    const key = `${r},${g},${b}`;
-    colors[key] = (colors[key] || 0) + 1;
+  ctx.fillStyle = 'rgba(2, 1, 4, 0.12)';
+  ctx.fillRect(0, 0, rect.width, rect.height);
+
+  const time = Date.now() * 0.001;
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+  const intensity = currentComposition.intensity;
+  const tempo = currentComposition.tempo;
+
+  // Pulsing center
+  const pulse = (Math.sin(time * tempo / 60 * Math.PI * 2) * 0.4 + 0.6) * intensity;
+  const radius = Math.min(rect.width, rect.height) * 0.12 * pulse;
+
+  const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 3);
+  gradient.addColorStop(0, `rgba(139, 92, 246, ${0.8 * intensity})`);
+  gradient.addColorStop(0.4, `rgba(14, 165, 233, ${0.4 * intensity})`);
+  gradient.addColorStop(1, 'rgba(2, 1, 4, 0)');
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius * 3, 0, Math.PI * 2);
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Animated rings
+  for (let i = 1; i <= 4; i++) {
+    const ringRadius = radius * i * 1.2 + Math.sin(time * 3 + i) * 20 * intensity;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(139, 92, 246, ${0.6 / i * intensity})`;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(139, 92, 246, 0.5)';
+    ctx.stroke();
   }
+
+  // Particles
+  if (!window.particles) {
+    window.particles = [];
+    for (let i = 0; i < 80; i++) {
+      window.particles.push({
+        x: Math.random() * rect.width,
+        y: Math.random() * rect.height,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        hue: Math.random() * 360,
+        size: Math.random() * 3 + 1
+      });
+    }
+  }
+
+  window.particles.forEach(p => {
+    p.x += p.vx * intensity;
+    p.y += p.vy * intensity;
+    p.hue += 2;
+    
+    if (p.x < 0) p.x = rect.width;
+    if (p.x > rect.width) p.x = 0;
+    if (p.y < 0) p.y = rect.height;
+    if (p.y > rect.height) p.y = 0;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * intensity, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${0.8 * intensity})`;
+    ctx.fill();
+  });
+
+  vizAnimationId = requestAnimationFrame(animateVisualizer);
+}
+
+function startWaveAnimation() {
+  let phase = 0;
+  function animate() {
+    if (!isActive) return;
+    
+    phase += 0.15;
+    const intensity = currentComposition.intensity;
+    
+    for (let i = 0; i < 48; i++) {
+      const height = Math.abs(Math.sin(phase + i * 0.25)) * 60 * intensity + 6;
+      const bar = document.getElementById(`wave-bar-${i}`);
+      if (bar) {
+        bar.style.height = `${height}px`;
+      }
+    }
+    
+    waveAnimationId = requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ===== SCENE ANALYSIS =====
+function extractDominantColors() {
+  if (!elements.video.videoWidth) {
+    return ['#1e1b4b', '#2a1f5e', '#3b2a6b'];
+  }
+
+  const canvas = elements.colorCanvas;
+  const ctx = canvas.getContext('2d');
+  canvas.width = 100;
+  canvas.height = 75;
   
-  return Object.entries(colors)
+  ctx.drawImage(elements.video, 0, 0, 100, 75);
+  const imageData = ctx.getImageData(0, 0, 100, 75).data;
+  
+  const colorCounts = {};
+  for (let i = 0; i < imageData.length; i += 10) { // Sample every 10th pixel
+    const r = Math.round(imageData[i] / 32) * 32;
+    const g = Math.round(imageData[i + 1] / 32) * 32;
+    const b = Math.round(imageData[i + 2] / 32) * 32;
+    const key = `${r},${g},${b}`;
+    colorCounts[key] = (colorCounts[key] || 0) + 1;
+  }
+
+  const sortedColors = Object.entries(colorCounts)
     .sort(([,a], [,b]) => b - a)
     .slice(0, 3)
-    .map(([rgb]) => {
-      const [r, g, b] = rgb.split(',').map(Number);
+    .map(([colorKey]) => {
+      const [r, g, b] = colorKey.split(',').map(Number);
       return `rgb(${r},${g},${b})`;
     });
+
+  while (sortedColors.length < 3) {
+    sortedColors.push('#1e1b4b');
+  }
+
+  return sortedColors;
 }
 
-// ===== OBJECT DETECTION =====
-function detectObjects(colors) {
-  const objects = new Set();
-  const colorStr = colors.join(' ').toLowerCase();
+function detectSceneElements(colors) {
+  const elements = new Set();
+  const colorString = colors.join(' ').toLowerCase();
+  const brightness = colors.reduce((sum, color) => {
+    const match = color.match(/rgb\$(\d+),\s*(\d+),\s*(\d+)\$/);
+    if (match) {
+      return sum + (Number(match[1]) + Number(match[2]) + Number(match[3])) / 3;
+    }
+    return sum;
+  }, 0) / colors.length;
+
+  if (brightness > 180) elements.add('bright lighting');
+  else if (brightness > 120) elements.add('warm lighting');
+  else if (brightness > 60) elements.add('soft lighting');
+  else elements.add('dark ambiance');
+
+  if (colorString.includes('0,') || colorString.includes('20,')) elements.add('dark surfaces');
+  if (colorString.includes('200') || colorString.includes('255')) elements.add('bright highlights');
+  if (colorString.includes('red') || colorString.includes('orange')) elements.add('warm tones');
+  if (colorString.includes('blue') || colorString.includes('purple')) elements.add('cool tones');
+
+  // Always add some room elements
+  elements.add('room atmosphere');
+  elements.add('ambient space');
   
-  // Color-based heuristics
-  if (colorStr.includes('green') || colorStr.includes('100,') || colorStr.includes('0,150')) {
-    objects.add('plants');
-  }
-  if (colorStr.includes('warm') || colorStr.includes('255,') || colorStr.includes('200,150')) {
-    objects.add('warm light');
-  }
-  if (colorStr.includes('blue') || colorStr.includes('0,100,') || colorStr.includes('50,100,200')) {
-    objects.add('cool tones');
-  }
-  if (colorStr.includes('dark') || colorStr.includes('20,') || colorStr.includes('30,30,')) {
-    objects.add('shadows');
-  }
-  
-  // Always add room context
-  objects.add('room');
-  objects.add('space');
-  
-  return Array.from(objects).slice(0, 6);
+  return Array.from(elements).slice(0, 8);
 }
 
-// ===== AI COMPOSITION =====
-async function getAIComposition(colors, objects) {
-  try {
-    const prompt = `Analyze this room for music composition:
+async function analyzeScene() {
+  if (!isActive) return;
 
-Colors: ${colors.join(', ')}
-Objects: ${objects.join(', ')}
+  updateStatus('status-ai', 'Analyzing...', true, 'blue');
+  logMessage('🔍 Analyzing room scene with AI...');
 
-Return ONLY valid JSON:
+  // Extract visual data
+  const colors = extractDominantColors();
+  const detectedElements = detectSceneElements(colors);
+
+  // Update UI
+  document.getElementById('color-1').style.background = colors[0];
+  document.getElementById('color-2').style.background = colors[1];
+  document.getElementById('color-3').style.background = colors[2];
+
+  document.getElementById('objects-count').textContent = `${detectedElements.length} Objects Detected`;
+  elements.objectsGrid.innerHTML = detectedElements
+    .map(el => `<div class="object-tag">${el}</div>`)
+    .join('');
+
+  // AI Analysis
+  if (GROQ_API_KEY && GROQ_API_KEY !== 'gsk_your_actual_groq_api_key_here') {
+    await analyzeWithAI(colors, detectedElements);
+  } else {
+    applyFallbackComposition(colors, detectedElements);
+    logMessage('⚠️ Using fallback analysis (add Groq API key for AI)', 'warning');
+  }
+}
+
+async function analyzeWithAI(colors, elements) {
+  const prompt = `You are an expert AI music composer for RoomSound visualizer.
+
+Scene Analysis:
+- Colors: ${colors.join(', ')}
+- Elements: ${elements.join(', ')}
+
+Respond ONLY with valid JSON (no markdown, no explanations):
 {
-  "mood": "CALM|ENERGETIC|MYSTERIOUS|PEACEFUL|WARM|COOL",
-  "description": "Brief soundscape description (1 sentence)",
-  "tempo": 45-120,
-  "pitch": 200-800,
-  "intensity": 0.1-1.0,
-  "reverb": 0.1-1.0
+  "mood": "CALM|PEACEFUL|ENERGETIC|MYSTERIOUS|INTENSE|DARK",
+  "description": "Creative one-sentence description of the soundscape (max 80 chars)",
+  "tempo": ${Math.round(50 + Math.random() * 100)},
+  "pitch": ${Math.round(250 + Math.random() * 500)},
+  "intensity": ${(0.2 + Math.random() * 0.7).toFixed(2)},
+  "reverb": ${(0.2 + Math.random() * 0.6).toFixed(2)},
+  "instrument": "sine|triangle|sawtooth|square"
 }`;
 
+  try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
         model: 'llama3-8b-8192',
-        max_tokens: 200,
+        max_tokens: 250,
         temperature: 0.7,
         messages: [
-          { role: 'system', content: 'Respond with ONLY valid JSON. No explanations.' },
+          {
+            role: 'system',
+            content: 'You are a music composer AI. ALWAYS respond with ONLY valid JSON matching the exact format requested. No explanations, no markdown, no extra text.'
+          },
           { role: 'user', content: prompt }
         ]
       })
     });
 
     const data = await response.json();
-    const content = data.choices[0].message.content.replace(/```json|```/g, '').trim();
-    return JSON.parse(content);
+    const content = data.choices?.[0]?.message?.content?.trim();
+
+    if (content) {
+      const cleaned = content.replace(/```json|```/g, '').trim();
+      const composition = JSON.parse(cleaned);
+      applyComposition(composition);
+      logMessage(`🎨 AI composed: ${composition.mood} (${composition.tempo} BPM)`, 'success');
+    } else {
+      throw new Error('No valid response');
+    }
   } catch (error) {
-    console.log('AI offline, using fallback');
-    return null;
+    console.warn('AI analysis failed:', error);
+    applyFallbackComposition(colors, elements);
   }
+
+  updateStatus('status-ai', 'AI Active', true, 'blue');
 }
 
-// ===== FALLBACK COMPOSITION =====
-function generateFallback(colors) {
-  const moods = ['CALM', 'PEACEFUL', 'WARM', 'COOL', 'SERENE'];
-  const colorMood = colors[0].includes('green') ? 'PEACEFUL' : 
-                   colors[0].includes('red') || colors[0].includes('orange') ? 'WARM' :
-                   colors[0].includes('blue') ? 'COOL' : 'CALM';
-  
-  return {
-    mood: colorMood,
-    description: `Atmospheric composition inspired by ${colors[0].toLowerCase()}`,
-    tempo: 60 + Math.random() * 40,
-    pitch: 300 + Math.random() * 300,
+function applyFallbackComposition(colors, elements) {
+  const moods = ['CALM', 'PEACEFUL', 'ENERGETIC', 'MYSTERIOUS'];
+  const composition = {
+    mood: moods[Math.floor(Math.random() * moods.length)],
+    description: `Atmospheric composition inspired by ${colors[0]}`,
+    tempo: 60 + Math.random() * 80,
+    pitch: 300 + Math.random() * 400,
     intensity: 0.4 + Math.random() * 0.4,
-    reverb: 0.5 + Math.random() * 0.3
+    reverb: 0.3 + Math.random() * 0.4,
+    instrument: ['sine', 'triangle'][Math.floor(Math.random() * 2)]
   };
-}
-
-// ===== UPDATE UI =====
-function updateColors(colors) {
-  document.getElementById('color1').style.background = colors[0];
-  document.getElementById('color2').style.background = colors[1] || '#1a1a2e';
-  document.getElementById('color3').style.background = colors[2] || '#16213e';
-}
-
-function updateObjects(objects, count) {
-  document.getElementById('obj-count').textContent = `${count} objects detected`;
-  const container = document.getElementById('tagsContainer');
-  container.innerHTML = objects.map(obj => 
-    `<div class="tag">${obj.toUpperCase()}</div>`
-  ).join('');
+  applyComposition(composition);
 }
 
 function applyComposition(params) {
-  document.getElementById('moodDisplay').textContent = params.mood;
-  document.getElementById('aiDescription').textContent = params.description;
+  // Update display
+  document.getElementById('mood-display').textContent = params.mood || 'AMBIENT';
+  document.getElementById('ai-description').textContent = params.description || 'AI-generated soundscape';
   
-  document.getElementById('tempoValue').textContent = `${Math.round(params.tempo)} BPM`;
-  document.getElementById('pitchValue').textContent = `${Math.round(params.pitch)} Hz`;
-  document.getElementById('intensityValue').textContent = `${Math.round(params.intensity * 100)}%`;
-  document.getElementById('reverbValue').textContent = `${Math.round(params.reverb * 100)}%`;
-  
-  document.getElementById('tempoBar').style.width = `${Math.max(0, (params.tempo - 40) / 80 * 100)}%`;
-  document.getElementById('pitchBar').style.width = `${Math.max(0, (params.pitch - 200) / 600 * 100)}%`;
-  document.getElementById('intensityBar').style.width = `${params.intensity * 100}%`;
-  document.getElementById('reverbBar').style.width = `${params.reverb * 100}%`;
-  
-  if (synth && Tone.Transport.state === 'started') {
-    Tone.Transport.bpm.value = params.tempo;
-  }
-  
-  updateStatus('dot-ai', 'txt-ai', true, 'COMPOSING');
-  log(`🎵 ${params.mood} composition loaded`, 'good');
-}
+  document.getElementById('param-tempo').textContent = `${Math.round(params.tempo || 80)} BPM`;
+  document.getElementById('param-pitch').textContent = `${Math.round(params.pitch || 440)} Hz`;
+  document.getElementById('param-intensity').textContent = `${Math.round((params.intensity || 0.5) * 100)}%`;
+  document.getElementById('param-reverb').textContent = `${Math.round((params.reverb || 0.3) * 100)}%`;
 
-// ===== STATUS UPDATE =====
-function updateStatus(dotId, textId, active, text) {
-  const dot = document.getElementById(dotId);
-  const textEl = document.getElementById(textId);
-  
-  if (active) {
-    dot.className = `dot ${dotId === 'dot-cam' ? 'green' : dotId === 'dot-ai' ? 'blue' : 'yellow'}`;
-  } else {
-    dot.className = 'dot';
-  }
-  textEl.textContent = text;
-}
+  // Update bars
+  document.getElementById('bar-tempo').style.width = Math.max(0, Math.min(100, ((params.tempo || 80) - 40) / 120 * 100)) + '%';
+  document.getElementById('bar-pitch').style.width = Math.max(0, Math.min(100, ((params.pitch || 440) - 200) / 600 * 100)) + '%';
+  document.getElementById('bar-intensity').style.width = Math.max(0, Math.min(100, (params.intensity || 0.5) * 100)) + '%';
+  document.getElementById('bar-reverb').style.width = Math.max(0, Math.min(100, (params.reverb || 0.3) * 100)) + '%';
 
-// ===== VISUALIZER =====
-let particles = [];
-function startVisualizer() {
-  vizCanvas.width = vizCanvas.offsetWidth * 2;
-  vizCanvas.height = vizCanvas.offsetHeight * 2;
-  vizCtx.scale(2, 2);
-  
-  particles = Array.from({ length: 80 }, () => ({
-    x: Math.random() * vizCanvas.offsetWidth,
-    y: Math.random() * vizCanvas.offsetHeight,
-    vx: (Math.random() - 0.5) * 2,
-    vy: (Math.random() - 0.5) * 2,
-    hue: Math.random() * 360,
-    size: Math.random() * 3 + 1,
-    alpha: Math.random() * 0.6 + 0.2
-  }));
-  
-  animateVisualizer();
-}
-
-function animateVisualizer() {
-  animationId = requestAnimationFrame(animateVisualizer);
-  
-  const w = vizCanvas.offsetWidth;
-  const h = vizCanvas.offsetHeight;
-  
-  // Fade trail
-  vizCtx.fillStyle = 'rgba(5, 5, 8, 0.12)';
-  vizCtx.fillRect(0, 0, w, h);
-  
-  particles.forEach(p => {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.hue += 1;
-    
-    if (p.x < 0 || p.x > w) p.vx *= -1;
-    if (p.y < 0 || p.y > h) p.vy *= -1;
-    
-    vizCtx.save();
-    vizCtx.globalAlpha = p.alpha;
-    vizCtx.fillStyle = `hsl(${p.hue}, 70%, 60%)`;
-    vizCtx.beginPath();
-    vizCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    vizCtx.fill();
-    vizCtx.restore();
-  });
-  
-  // Central pulse
-  const time = Date.now() * 0.002;
-  const pulse = Math.sin(time) * 0.3 + 0.7;
-  const centerX = w / 2;
-  const centerY = h / 2;
-  const radius = Math.min(w, h) * 0.15 * pulse;
-  
-  const gradient = vizCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 2);
-  gradient.addColorStop(0, 'rgba(124, 58, 237, 0.6)');
-  gradient.addColorStop(0.6, 'rgba(6, 182, 212, 0.3)');
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  
-  vizCtx.fillStyle = gradient;
-  vizCtx.beginPath();
-  vizCtx.arc(centerX, centerY, radius * 2, 0, Math.PI * 2);
-  vizCtx.fill();
-}
-
-// ===== WAVEFORM =====
-function createWaveBars() {
-  const container = document.getElementById('waveContainer');
-  for (let i = 0; i < 45; i++) {
-    const bar = document.createElement('div');
-    bar.className = 'wave-bar';
-    container.appendChild(bar);
-  }
-}
-
-function updateWaveform() {
-  const bars = document.querySelectorAll('.wave-bar');
-  const time = Date.now() * 0.008;
-  const intensity = 0.4 + Math.random() * 0.3;
-  
-  bars.forEach((bar, i) => {
-    const height = Math.abs(Math.sin(time + i * 0.2)) * 60 * intensity + 8;
-    bar.style.height = `${height}px`;
-  });
-}
-
-// ===== EVENTS =====
-function setupEventListeners() {
-  document.getElementById('startBtn').onclick = () => {
-    if (isActive) stopListening();
-    else startListening();
+  // Update global state
+  currentComposition = {
+    tempo: params.tempo || 80,
+    pitch: params.pitch || 440,
+    intensity: params.intensity || 0.5,
+    reverb: params.reverb || 0.3,
+    instrument: params.instrument || 'sine'
   };
-  
-  document.getElementById('analyzeBtn').onclick = analyzeScene;
-  document.getElementById('stopBtn').onclick = stopListening;
-  
-  // Keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && !e.target.closest('input')) {
-      e.preventDefault();
-      document.getElementById('startBtn').click();
-    }
-  });
-}
 
-// ===== LOG =====
-function log(message, type = '') {
-  const container = document.getElementById('logContainer');
-  const entry = document.createElement('div');
-  entry.className = `log-entry log-${type}`;
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
-  container.prepend(entry);
+  // Update synth and restart music
+  if (audioSynth) {
+    audioSynth.set({
+      oscillator: { type: currentComposition.instrument }
+    });
+    Tone.Transport.bpm.value = currentComposition.tempo;
+  }
   
-  if (container.children.length > 12) {
-    container.removeChild(container.lastChild);
+  if (isActive) {
+    startAmbientMusic();
   }
 }
 
-// ===== AUTO WAVE ANIMATION =====
-setInterval(updateWaveform, 80);
+// ===== EVENT LISTENERS =====
+elements.buttons.start.addEventListener('click', startApp);
+elements.buttons.stop.addEventListener('click', stopApp);
+elements.buttons.analyze.addEventListener('click', analyzeScene);
 
-// ===== RESIZE HANDLER =====
-window.addEventListener('resize', () => {
-  if (isActive && vizCanvas) {
-    vizCanvas.width = vizCanvas.offsetWidth * 2;
-    vizCanvas.height = vizCanvas.offsetHeight * 2;
-    vizCtx.scale(2, 2);
+// Handle page visibility change
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && isActive) {
+    Tone.Transport.pause();
+  } else if (!document.hidden && isActive) {
+    Tone.Transport.start();
   }
 });
+
+// Prevent context menu on canvas
+elements.vizCanvas.addEventListener('contextmenu', e => e.preventDefault());
+
+logMessage('🚀 RoomSound initialized. Click START to begin!', 'success');
+
+console.log('🌟 RoomSound v2.0 - Fully functional with Groq AI integration');
+console.log('💡 Get your free Groq API key: https://console.groq.com/keys');
 </script>
 </body>
 </html>
